@@ -418,7 +418,27 @@
 
 %================================================================ 12 — SOFT RESULTS
 \begin{frame}{Kết quả 5: nén mềm (PISCO và mô hình của nhóm)}
-  \todo{bảng soft.tex: Mistral-7B text vs PISCO; Qwen-1.5B text vs nén mềm 8 vector / lai}
+  \begin{columns}[T]
+    \begin{column}{0.6\textwidth}
+      \begingroup\scriptsize
+      \renewcommand{\arraystretch}{1.08}
+      \setlength{\tabcolsep}{3pt}
+      \begin{tabularx}{\linewidth}{@{}X r r r r r r@{}}
+      \toprule
+      Cấu hình & @1 & @10 & @20 & TB & Token & Nén \\
+      \midrule
+      \inputtable{tables/soft.tex}
+      \end{tabularx}\endgroup\par\vspace{0.2em}
+      {\tiny Mỗi khối: cùng một reader, chỉ khác ngữ cảnh văn bản / vector. Rerank: chỉ vị trí 10.}
+    \end{column}
+    \begin{column}{0.37\textwidth}
+      \footnotesize
+      \begin{itemize}\setlength\itemsep{0.3em}
+        \item \todo{PISCO vs văn bản (Mistral)}
+        \item \todo{Mô hình của nhóm: mềm / lai}
+      \end{itemize}
+    \end{column}
+  \end{columns}
 \end{frame}
 
 %================================================================ 13 — RETRIEVAL
