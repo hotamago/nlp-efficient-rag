@@ -288,8 +288,9 @@ def soft_table() -> pd.DataFrame | None:
         lines.append(f"\\multicolumn{{7}}{{l}}{{\\textit{{{title}}}}} \\\\")
         for name, r in t.iterrows():
             accs = " & ".join(fmt(r[p]) for p in POS)
+            ratio = f"{r.ratio:.1f}$\\times$" if r.Token else "--"  # closed-book: no context
             lines.append(f"\\quad {tex_name(name)} & {accs} & {fmt(r.TB)} & {r.Token:.0f} & "
-                         f"{r.ratio:.1f}$\\times$ \\\\")  # fmt: skip
+                         f"{ratio} \\\\")  # fmt: skip
         lines.append("\\midrule")
         out.append(t.assign(reader=title))
     lines[-1] = "\\bottomrule"
