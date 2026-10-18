@@ -51,19 +51,122 @@ Bộ nén & Token & Nén & R@1 & R@10 & R@20 & ms/câu \\
 \subsection{Độ chính xác của RAG sau nén}
 \label{sec:res-main}
 
-% TODO(T09): main_results + tradeoff + significance after T03 finishes
+\begin{table}[t]
+\centering
+\caption{Kết quả chính (Qwen2.5-7B-Instruct-AWQ, $n=500$): accuracy (\%) theo vị trí đoạn vàng và
+trung bình (TB), số token ngữ cảnh, tỉ lệ nén, context recall (\%) và độ trễ nén (ms/câu, GPU). BM25 và
+Dense top-5 chỉ chạy ở vị trí 10 (đã có số công bố, Mục~\ref{sec:res-published}); LongLLMLingua
+($n=200$) ở Bảng~\ref{tab:published}. In đậm: TB cao nhất trong các bộ nén.}
+\label{tab:main}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{l r r r r r r r r}
+\toprule
+Cấu hình & @1 & @10 & @20 & TB & Token & Nén & Recall & ms \\
+\midrule
+\inputtable{tables/main_results.tex}
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.8\linewidth]{tradeoff.pdf}
+\caption{Accuracy trung bình 3 vị trí theo số token ngữ cảnh (thang log). Góc trên bên trái là tốt
+nhất: ít token, độ chính xác cao.}
+\label{fig:tradeoff}
+\end{figure}
+
+Bảng~\ref{tab:main} và Hình~\ref{fig:tradeoff} cho thấy khoảng cách giữa closed-book (38,8\%) và
+oracle (92,6\%) là 53,8 điểm: ngữ cảnh rất quan trọng, nhưng 20 đoạn đầy đủ (65,3\%) chỉ khai thác được
+một nửa khoảng cách đó vì nhiễu. Kiểm định bootstrap ghép cặp (10.000 lần lấy mẫu, khoảng tin cậy 95\%,
+\texttt{results/compression/significance.csv}) so với ngữ cảnh đầy đủ cho các kết luận sau.
+
+\begin{itemize}
+  \item \textbf{Ở 4$\times$, nén mức câu gần như không mất độ chính xác.} Provence $\tau=0{,}1$ dùng
+  621 token (4,6$\times$) và đạt 64,0\% so với 65,3\%; chênh lệch ở cả ba vị trí đều không có ý nghĩa
+  thống kê ($-1{,}8$ [$-5{,}6$; $2{,}0$], $+0{,}4$ [$-3{,}4$; $4{,}2$], $-2{,}4$ [$-6{,}2$; $1{,}4$]
+  điểm ở vị trí 1/10/20). Đây là cấu hình tốt nhất trên toàn bộ đường Pareto.
+  \item \textbf{Chọn tài liệu bằng cross-encoder đứng thứ hai.} Rerank top-5 (4,1$\times$) đạt 62,7\%,
+  nhưng giảm có ý nghĩa ở vị trí 20 ($-6{,}0$ [$-10{,}0$; $-2{,}2$]) vì 20,6\% câu mất đoạn chứa đáp án.
+  Rerank top-10 (2$\times$) đạt 63,7\%. Bộ chọn rẻ hơn kém xa: Dense top-5 56,0\%, BM25 top-5 45,4\%
+  (vị trí 10).
+  \item \textbf{Nén mức token thất bại với reader 7B.} LLMLingua-2 $r=0{,}25$ (3,5$\times$) chỉ đạt
+  38,3\% -- ngang closed-book -- dù context recall vẫn còn 68\%; ở $r=0{,}5$ (1,9$\times$) cũng chỉ
+  53,5\%. Ghép rerank-10 trước LLMLingua-2 (cấu hình tốt nhất của LLMLingua-2 trên GPT-3.5) đạt 53,4\%,
+  giảm có ý nghĩa ở mọi vị trí. Mục~\ref{sec:res-errors} cho thấy phần lớn thiệt hại không đến từ việc
+  xoá đáp án mà từ việc văn bản bị xé vụn khiến reader đọc sai.
+  \item \textbf{OpenProvence} (2,6$\times$) giữ bằng chứng tốt nhất (recall 96,4\%) nhưng accuracy
+  62,1\%, thấp hơn Provence $\tau=0{,}1$ dù giữ nhiều token hơn: giữ thêm câu nhiễu không giúp reader.
+  \item \textbf{Truncate} là trường hợp đặc biệt: khi đoạn vàng ở đầu, cắt còn 730 token lại
+  \emph{tăng} accuracy lên 74,0\% ($+8{,}4$ [$5{,}0$; $12{,}0$]) vì loại bỏ 15 đoạn nhiễu; nhưng ở vị trí
+  10/20 chỉ còn 19,6\%. Điều này xác nhận rằng ngữ cảnh ngắn và đúng tốt hơn ngữ cảnh dài -- vấn đề là
+  chọn \emph{đúng} phần nào.
+\end{itemize}
+
+\paragraph{Chi phí.} Với vLLM, thời gian prefill tỉ lệ với số token: Provence giảm 2.875 $\to$ 621 token
+mỗi câu, đổi lại 210 ms nén trên GPU (4,9 s trên CPU, Mục~\ref{sec:res-cpu}). Rerank top-5 rẻ hơn hẳn
+(14 ms GPU, 196 ms CPU) với độ chính xác thấp hơn 1,3 điểm -- là lựa chọn hợp lý khi không có GPU.
 
 %------------------------------------------------------------------------------
 \subsection{Nén và hiện tượng \emph{lost in the middle}}
 \label{sec:res-position}
 
-% TODO(T09)
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.8\linewidth]{position_curve.pdf}
+\caption{Accuracy theo vị trí đoạn chứa đáp án. Đường ngang: closed-book và oracle.}
+\label{fig:position}
+\end{figure}
+
+Với GPT-3.5-Turbo, \citet{liu2024lost} và LongLLMLingua báo cáo đường cong chữ U sâu: 75,7 / 54,1 /
+63,1\% ở vị trí 1/10/20, chênh 21,6 điểm giữa đầu và giữa. Với Qwen2.5-7B-Instruct, đường cong của ngữ
+cảnh đầy đủ gần như phẳng (65,6 / 62,2 / 68,0\%): chênh lệch lớn nhất chỉ 5,8 điểm, và vị trí cuối còn
+tốt hơn vị trí đầu (Hình~\ref{fig:position}). Các mô hình mới được huấn luyện với ngữ cảnh dài hơn
+nhiều (Qwen2.5: 32K--128K token) nên 2.900 token không còn là ngữ cảnh ``dài''.
+
+Hệ quả là nén \emph{không có nhiều chỗ để làm phẳng} đường cong: Provence $\tau=0{,}1$ cho 63,8 / 62,6 /
+65,6\%, gần như song song với ngữ cảnh đầy đủ. Các bộ nén không phụ thuộc vị trí (mức tài liệu, câu,
+token) giữ nguyên hình dạng đường cong của reader; chỉ truncate -- vốn phụ thuộc vị trí -- tạo ra độ
+dốc lớn.
 
 %------------------------------------------------------------------------------
 \subsection{Đối chiếu với số liệu đã công bố}
 \label{sec:res-published}
 
-% TODO(T09)
+\begin{table}[t]
+\centering
+\caption{So sánh với số liệu đã công bố trên cùng benchmark (GPT-3.5-Turbo-0613; LongLLMLingua
+\citep{jiang2024longllmlingua} Bảng 1 và LLMLingua-2 \citep{pan2024llmlingua2} Bảng 4). Hàng đầu:
+accuracy tuyệt đối (\%) của ngữ cảnh đầy đủ; các hàng sau: \emph{chênh lệch} (điểm) so với ngữ cảnh
+đầy đủ của chính hệ đó. LongLLMLingua của chúng tôi: so cặp trên 193 câu chung với lần chạy đầy đủ.}
+\label{tab:published}
+\small
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{l r r r l r r r}
+\toprule
+\multicolumn{4}{c}{GPT-3.5-Turbo (đã công bố)} & \multicolumn{4}{c}{Qwen2.5-7B-AWQ (của chúng tôi)} \\
+\cmidrule(lr){1-4}\cmidrule(lr){5-8}
+Phương pháp & @1 & @10 & @20 & Cấu hình tương ứng & @1 & @10 & @20 \\
+\midrule
+\inputtable{tables/published.tex}
+\bottomrule
+\end{tabular}
+\end{table}
+
+Vì GPT-3.5-Turbo-0613 đã ngừng hoạt động, chúng tôi so sánh \emph{độ chênh so với baseline của chính
+mỗi hệ} (Bảng~\ref{tab:published}) thay vì số tuyệt đối.
+\begin{itemize}
+  \item \textbf{Tái lập được}: thứ hạng giữa các bộ chọn tài liệu (SBERT/Dense tốt hơn BM25 rõ rệt) và
+  mức sụt nặng của LLMLingua-2 đơn lẻ ở 4$\times$ ($-29{,}0$ / $-21{,}4$ / $-30{,}4$ điểm so với
+  $-27{,}1$ / $-10{,}5$ / $-23{,}2$ được công bố).
+  \item \textbf{Không tái lập được}: kết luận ``nén làm \emph{tăng} độ chính xác ở giữa'' -- LongLLMLingua
+  $+17{,}1$ và LLMLingua-2 + lọc tài liệu $+12{,}9$ điểm ở vị trí 10. Với reader của chúng tôi, mức thay
+  đổi tương ứng là $+1{,}0$ (không có ý nghĩa thống kê, khoảng tin cậy [$-6{,}7$; $8{,}8$]) và $-8{,}4$.
+  Lời giải thích hợp lý nhất là ở Mục~\ref{sec:res-position}: lợi ích chính của các phương pháp này trên
+  GPT-3.5 là \emph{khắc phục lost in the middle}, mà reader hiện đại hầu như không còn mắc.
+  \item Về vị trí đầu và cuối, cả hai hệ đều cho thấy nén 4$\times$ ở mức tốt nhất chỉ \emph{hoà}
+  với ngữ cảnh đầy đủ (LongLLMLingua $-0{,}7$ trên GPT-3.5; Provence $-1{,}8$ / $-2{,}4$ của chúng tôi).
+\end{itemize}
 
 %------------------------------------------------------------------------------
 \subsection{Nén mềm}
@@ -125,4 +228,38 @@ Hệ thống & Hit@1 & Hit@5 & Hit@20 & MRR@10 & MB & ms (batch) & ms (1 câu) \
 \subsection{Phân tích lỗi}
 \label{sec:res-errors}
 
-% TODO(T14)
+Với mỗi bộ nén và mỗi vị trí, chúng tôi ghép từng câu hỏi với kết quả của ngữ cảnh đầy đủ
+(\texttt{scripts/error\_analysis.py}) và chia thành: \emph{hỏng do mất bằng chứng} (đầy đủ trả lời
+đúng, sau nén sai và đáp án không còn trong ngữ cảnh), \emph{hỏng dù còn bằng chứng}, và \emph{được sửa}
+(đầy đủ sai, sau nén đúng).
+
+\begin{table}[t]
+\centering
+\caption{Phân loại thay đổi so với ngữ cảnh đầy đủ (\% số cặp câu hỏi--vị trí; 1.500 cặp, BM25/Dense
+500 cặp). ``Sai, còn BC'': tỉ lệ câu sai sau nén dù đáp án vẫn còn trong ngữ cảnh.}
+\label{tab:errors}
+\small
+\begin{tabular}{l r r r r r}
+\toprule
+Bộ nén & Hỏng, mất BC & Hỏng, còn BC & Được sửa & Ròng & Sai, còn BC \\
+\midrule
+\inputtable{tables/errors.tex}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{itemize}
+  \item \textbf{Mọi bộ nén đều sửa được 5--9\% câu} mà ngữ cảnh đầy đủ trả lời sai: bớt nhiễu giúp reader
+  tập trung. Với Provence $\tau=0{,}1$, số câu được sửa (8,8\%) gần bù hết số câu hỏng (10,1\%).
+  \item \textbf{Nén mức câu gần như không xoá bằng chứng} (Provence 1,7\%, OpenProvence 0,3\%); phần
+  hỏng chủ yếu là reader trả lời sai dù bằng chứng còn, thường vì câu bị cắt mất ngữ cảnh xung quanh.
+  Ví dụ câu \emph{``who turned out to be the mother on how i met your mother''} (đáp án Tracy McConnell):
+  sau nén, reader trả lời tên diễn viên (Cristin Milioti) thay vì tên nhân vật (Hình~\ref{fig:demo}).
+  \item \textbf{LLMLingua-2 hỏng chủ yếu \emph{dù còn bằng chứng}}: ở $r=0{,}5$, 14,3\% so với 3,9\% do
+  mất bằng chứng; ở $r=0{,}25$, 19,0\% so với 13,1\%. Văn bản bị bỏ token rời rạc (mất mạo từ, giới từ,
+  dấu câu) vẫn chứa đáp án nhưng reader 7B không còn đọc đúng quan hệ giữa các thực thể.
+  \item \textbf{Truncate và BM25 hỏng do mất bằng chứng} (27,7\% và 19,0\%).
+  \item \textbf{Một phần lỗi do cách chấm}: reader 7B trả lời dài (tối đa 100 token) và đổi định dạng,
+  ví dụ ``September 8, 2010'' bị chấm sai với đáp án ``8 September 2010''. Lỗi này ảnh hưởng như nhau
+  đến mọi cấu hình nên không làm sai lệch so sánh, nhưng làm accuracy tuyệt đối thấp hơn thực tế.
+\end{itemize}
