@@ -25,7 +25,7 @@ Chỉ sửa dòng task của mình (và thêm dòng mới ở cuối). Ngày the
 | T17 | Cổng dừng P1 (21/10): 200 câu Tevatron-dev; đi tiếp nếu acc ≥ closed-book + 10 điểm và ≥ 70% full-text của reader 1.5B, nếu không thì dừng P1 và viết phân tích thất bại | Sơn/Claude | todo | T16 | |
 | T18 | Đánh giá P1 trên LITM 500×{1,10,20}: soft16x, lai, + các dòng của reader 1.5B (full, closed-book, oracle, 2–3 bộ nén cứng tốt nhất dùng lại context đã nén) | | todo | T17 | |
 | T13 | Track C – end-to-end: retriever tốt nhất (T06: bge-small int8) top-20 → bộ nén tốt nhất (T03) → LLM trên corpus gộp | | todo | T03 | P1 |
-| T15 | Cập nhật `README.md`, `docs/plan.md` theo kết quả cuối | | todo | T09 | |
+| T15 | Cập nhật `README.md`, `docs/plan.md` theo kết quả cuối | Sơn/Claude | doing | T09 | 18/10 – README có mục Kết quả chính (Track A/B, CPU); chờ số nén mềm |
 
 ## Đã xong
 
