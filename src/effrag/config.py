@@ -8,6 +8,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Keep the machine responsive: cap CPU threads used by torch / BLAS / tokenizers.
+_THREADS = os.getenv("EFFRAG_THREADS", "4")
+for _var in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMBA_NUM_THREADS"):
+    os.environ.setdefault(_var, _THREADS)
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "data"
 RESULTS_DIR = ROOT / "results"
@@ -20,7 +26,7 @@ class LLMSettings:
     api_key: str = field(default_factory=lambda: os.getenv("LLM_API_KEY", "EMPTY"))
     model: str = field(default_factory=lambda: os.getenv("LLM_MODEL", ""))
     temperature: float = 0.0
-    max_tokens: int = 64
+    max_tokens: int = 100  # Lost in the Middle uses 100 new tokens
     # USD per 1M input tokens, only used to estimate cost in reports.
     price_in: float = field(default_factory=lambda: float(os.getenv("LLM_PRICE_IN", "0")))
 

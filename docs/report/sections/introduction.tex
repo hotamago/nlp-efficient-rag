@@ -1,0 +1,65 @@
+\section{Giới thiệu}
+\label{sec:intro}
+
+\subsection{Bối cảnh}
+
+Retrieval-Augmented Generation (RAG)~\cite{lewis2020rag} là cách phổ biến nhất hiện nay để đưa tri
+thức bên ngoài vào mô hình ngôn ngữ lớn (LLM): với mỗi câu hỏi, một bộ truy hồi (retriever) tìm
+$k$ đoạn văn liên quan trong kho tài liệu, rồi LLM sinh câu trả lời dựa trên các đoạn đó. Để không bỏ
+sót bằng chứng, hệ thống thường lấy $k$ khá lớn (10--20 đoạn). Điều này gây ra ba vấn đề:
+
+\begin{enumerate}
+  \item \textbf{Chi phí và độ trễ.} Prompt dài hàng nghìn token; chi phí API và thời gian xử lý
+  prompt (prefill) tăng tuyến tính (thậm chí bậc hai với attention) theo độ dài ngữ cảnh.
+  \item \textbf{Nhiễu.} Phần lớn các đoạn truy hồi không chứa đáp án; chúng có thể đánh lạc hướng LLM.
+  \item \textbf{Thiên lệch vị trí.} \citet{liu2024lost} chỉ ra hiện tượng \emph{Lost in the Middle}:
+  độ chính xác của LLM cao khi đoạn chứa đáp án nằm ở đầu hoặc cuối prompt, nhưng giảm mạnh khi nó
+  nằm ở giữa (đường cong hình chữ U).
+\end{enumerate}
+
+Hướng \emph{Efficient RAG} giải quyết các vấn đề trên ở hai đầu của pipeline: (i) \textbf{nén ngữ
+cảnh} (context/prompt compression) -- loại bỏ token, câu hoặc đoạn không cần thiết trước khi đưa vào
+LLM; và (ii) \textbf{truy hồi hiệu quả} (efficient retrieval) -- giảm thời gian, bộ nhớ và chi phí
+của bước tìm kiếm mà vẫn giữ chất lượng.
+
+\subsection{Bài toán}
+
+Cho câu hỏi $q$ và tập $n=20$ đoạn văn truy hồi được $D=(d_1,\dots,d_n)$, trong đó đúng một đoạn
+$d_g$ chứa đáp án (đoạn ``vàng''). Một bộ nén $C$ biến $(q, D)$ thành ngữ cảnh ngắn hơn
+$c = C(q, D)$, sau đó LLM sinh câu trả lời $\hat a = \mathrm{LLM}(q, c)$. Mục tiêu là đồng thời:
+\begin{itemize}
+  \item tối đa độ chính xác $\mathrm{Acc} = \Pr[\hat a \text{ chứa đáp án đúng}]$;
+  \item tối thiểu số token $|c|$ (tức tối đa tỉ lệ nén $|D|/|c|$), độ trễ và chi phí;
+  \item ổn định khi vị trí $g$ của đoạn vàng thay đổi (bền vững với thiên lệch vị trí).
+\end{itemize}
+Ở phía truy hồi, cho kho $\mathcal{C}$ gồm khoảng 50 nghìn đoạn văn, ta so sánh các bộ truy hồi theo
+chất lượng (tỉ lệ top-$k$ chứa đáp án) và hiệu năng (kích thước chỉ mục, thời gian truy vấn).
+
+\subsection{Câu hỏi nghiên cứu và đóng góp}
+
+Báo cáo trả lời ba câu hỏi:
+\begin{description}
+  \item[RQ1.] Các bộ nén ngữ cảnh từ thế hệ đầu (LLMLingua-2, LongLLMLingua, 2023--2024) đến thế hệ
+  \emph{pruner} mới (Provence -- ICLR 2025, OpenProvence -- 2025) giảm được bao nhiêu token mà không
+  làm giảm độ chính xác? Chúng có làm ``phẳng'' đường cong chữ U không?
+  \item[RQ2.] Các kỹ thuật truy hồi hiệu quả (BM25S, static embedding, Matryoshka, lượng tử hoá
+  int8/binary, HNSW) đánh đổi chất lượng -- tốc độ -- bộ nhớ thế nào?
+  \item[RQ3.] Kết quả của nhóm so với các công bố trên cùng bộ dữ liệu ra sao?
+\end{description}
+
+Đóng góp chính của nhóm:
+\begin{itemize}
+  \item Xây dựng thư viện mã nguồn mở \texttt{effrag} (Python, \texttt{uv}) với giao diện thống nhất
+  cho 10 phương pháp nén và 13 cấu hình truy hồi, cùng giao thức đánh giá tái lập được (seed cố định,
+  bộ đếm token chung, cache kết quả LLM).
+  \item Đánh giá có hệ thống trên bộ NQ-Open 20 tài liệu của \citet{liu2024lost} -- bộ dữ liệu mà
+  LongLLMLingua~\cite{jiang2024longllmlingua} và LLMLingua-2~\cite{pan2024llmlingua2} đã công bố kết
+  quả theo từng vị trí. Theo khảo sát của nhóm, chưa có công bố nào đánh giá họ pruner Provence trên
+  đúng giao thức này.
+  \item Phân tích đánh đổi độ chính xác -- token -- độ trễ và một demo tương tác (Gradio) minh hoạ
+  trực quan phần ngữ cảnh mà mỗi phương pháp giữ lại.
+\end{itemize}
+
+Phần còn lại của báo cáo: Mục~\ref{sec:related} tổng quan nghiên cứu liên quan; Mục~\ref{sec:method}
+mô tả phương pháp; Mục~\ref{sec:impl} trình bày cài đặt; Mục~\ref{sec:results} phân tích kết quả;
+Mục~\ref{sec:conclusion} kết luận.

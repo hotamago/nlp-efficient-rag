@@ -10,7 +10,7 @@ authors = [
 requires-python = ">=3.11,<3.13"
 dependencies = [
     "torch>=2.4",
-    "transformers>=4.45",
+    "transformers>=4.51,<5",
     "sentence-transformers>=3.0",
     "llmlingua>=0.2.2",
     "bm25s>=0.2",
@@ -26,7 +26,12 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest>=8", "ruff>=0.6", "ipykernel"]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+    "ipykernel",
+    "python-pptx>=1.0.2",
+]
 demo = ["gradio>=4.40"]
 viz = ["matplotlib>=3.8", "seaborn>=0.13"]
 

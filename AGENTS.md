@@ -3,14 +3,44 @@
 File này là "hợp đồng" để mọi agent (Claude Code, Codex, Cursor, …) của các thành viên làm việc
 thống nhất. **Đọc hết trước khi sửa code.** `CLAUDE.md` chỉ import file này.
 
+## 0. Quy trình nhận task – BẮT BUỘC trước khi làm bất cứ việc gì
+
+`docs/tasks.md` là bảng task chung, cho biết ai đang làm gì và task nào còn trống. Mục đích là
+để hai thành viên (và agent của họ) không làm trùng hoặc gây xung đột.
+
+1. **Đồng bộ:** `git pull --rebase`, rồi đọc `docs/tasks.md`.
+2. **Chọn task:**
+   - Chỉ chọn task `todo` có các task phụ thuộc đã `done`.
+   - **Không** sửa code/file thuộc phạm vi một task `doing` của người khác. Cần thì hỏi người đó
+     hoặc thêm ghi chú vào cột "Cập nhật".
+3. **Nhận task ngay:**
+   - Điền "Người nhận" (vd. `Hoàng/Codex`), đổi trạng thái thành `doing`, ghi ngày giờ.
+   - Commit chỉ thay đổi đó (`chore(tasks): claim T07`) và **push ngay**, trước khi bắt đầu làm.
+   - Nếu push bị từ chối: `git pull --rebase`, kiểm tra lại. Nếu đã có người nhận task đó thì
+     chọn task khác.
+4. **Trong lúc làm:**
+   - Commit nhỏ và **push thường xuyên**: sau mỗi bước chạy được, mỗi kết quả thí nghiệm mới,
+     và tối thiểu khoảng mỗi giờ.
+   - Cập nhật cột "Cập nhật" khi có tiến triển hoặc số liệu đáng chú ý.
+   - Kết quả (`results/`) phải push ngay để người kia không phải chạy lại.
+5. **Xong task:**
+   - Chuyển task sang bảng "Đã xong", kèm 1 dòng kết quả chính và file liên quan.
+   - Commit, push.
+   - Mở khoá các task đang `blocked` vì task này (nếu có).
+6. **Phát sinh việc mới:** thêm dòng với ID kế tiếp (`T16`, …), trạng thái `todo`. Không tự ý
+   nhận việc lớn ngoài bảng mà chưa thống nhất với nhóm.
+7. **Bị chặn hoặc bỏ dở:** đổi trạng thái thành `blocked` (ghi lý do) hoặc trả về `todo` (xoá tên
+   người nhận) rồi push, để người khác nhận được.
+
 ## 1. Bối cảnh dự án
 
 - BTL IT4772 NLP, đề tài *Efficient LLM/RAG*, dạng **lập trình**. Deadline **CN 25/10/2026**.
 - Mục tiêu: benchmark **nén ngữ cảnh** (Track A) + **truy hồi hiệu quả** (Track B) cho RAG QA,
   so sánh với số liệu đã công bố, kèm demo Gradio. Xem `README.md`, `docs/research.md`,
   `docs/plan.md` (kế hoạch, phân công, ma trận thí nghiệm).
-- Ưu tiên **dùng thư viện/checkpoint có sẵn**, không tự train model. Không mở rộng phạm vi ngoài
-  `docs/plan.md` nếu chưa thống nhất trong nhóm.
+- Ưu tiên **dùng thư viện/checkpoint có sẵn**. Chỉ tự huấn luyện khi nhóm đã chốt (task T12 trong
+  `docs/tasks.md`). Không mở rộng phạm vi ngoài `docs/tasks.md`/`docs/plan.md` nếu chưa thống
+  nhất trong nhóm.
 
 ## 2. Môi trường
 
@@ -46,10 +76,12 @@ thống nhất. **Đọc hết trước khi sửa code.** `CLAUDE.md` chỉ impo
 ## 4. Giao thức thí nghiệm (BẮT BUỘC để số liệu so sánh được)
 
 - **Dữ liệu chính:** `load_litm_nq(gold_pos, n=500, seed=42)` – cùng 500 câu hỏi cho mọi vị trí
-  vàng `{0,4,9,14,19}`. Chạy full 2.655 câu chỉ cho 2–3 cấu hình tốt nhất ở cuối.
+  vàng `{0,9,19}` (đầu/giữa/cuối). Ma trận cấu hình nằm trong `scripts/run_all_compression.sh`:
+  closed-book/oracle chỉ 1 vị trí (không phụ thuộc vị trí), LongLLMLingua 200 câu ở vị trí giữa.
 - **Prompt:** dùng `build_prompt()` trong `generation.py` (prompt gốc của Lost in the Middle).
   Không sửa prompt cho riêng method nào.
-- **Generator:** một `LLM_MODEL` duy nhất cho cả nhóm, `temperature=0`, `max_tokens=64`. Ghi tên
+- **Generator:** một `LLM_MODEL` duy nhất cho cả nhóm: `Qwen/Qwen2.5-7B-Instruct-AWQ` qua vLLM
+  (served name `qwen2.5-7b-instruct`, `--max-model-len 4096`), `temperature=0`, `max_tokens=100`. Ghi tên
   model + ngày chạy (đã tự ghi vào `summary.csv`). Đổi model ⇒ chạy lại toàn bộ baseline.
 - **Đếm token:** luôn dùng `effrag.tokens.count_tokens` (tiktoken `o200k_base`), không dùng
   tokenizer riêng của từng compressor.
@@ -59,6 +91,9 @@ thống nhất. **Đọc hết trước khi sửa code.** `CLAUDE.md` chỉ impo
   dùng ngưỡng (Provence…) thì quét ngưỡng, báo cáo tỉ lệ thực tế đạt được.
 - **Chỉ số:** `accuracy` = `best_subspan_em` (đáp án chuẩn hoá nằm trong output), kèm
   `ctx_recall`, `em`, `f1`, token, `ratio`, `compress_ms`, `llm_ms`, `cost_usd_per_1k_q`.
+- Tiết kiệm tài nguyên: chỉ chạy một job nặng trên GPU tại một thời điểm (vLLM không chia GPU
+  được với bộ nén), `EFFRAG_THREADS=8`. Cái gì đã có số công bố thì trích dẫn thay vì chạy lại.
+- `transformers` ghim `<5` (OpenProvence và llmlingua chưa tương thích bản 5).
 - Luôn chạy `--dry-run` (miễn phí) trước để kiểm tra `ctx_recall`/`ratio`, rồi mới gọi LLM.
 - LLM được cache theo hash prompt trong `data/cache/llm/` → chạy lại không tốn tiền. Không xoá cache
   khi chưa cần.
@@ -77,8 +112,12 @@ thống nhất. **Đọc hết trước khi sửa code.** `CLAUDE.md` chỉ impo
 
 ## 6. Git workflow
 
-- Nhánh `main` luôn chạy được. Làm việc trên nhánh `feat/<tên-ngắn>` hoặc `exp/<tên>` → PR vào
-  `main`, thành viên kia review nhanh (hoặc tự merge nếu chỉ thêm kết quả/tài liệu).
+- Nhánh `main` luôn chạy được.
+  - Thay đổi `docs/tasks.md`, kết quả (`results/`) và tài liệu thì commit **thẳng vào `main`** và
+    push ngay, để mọi người thấy liền.
+  - Thay đổi code lớn hoặc có rủi ro thì làm trên nhánh `feat/<tên-ngắn>` hoặc `exp/<tên>` →
+    PR/merge sớm (trong ngày). Không giữ nhánh riêng lâu.
+- Chạy `ruff check` trước khi push code.
 - Commit nhỏ, message tiếng Anh dạng `feat: …`, `fix: …`, `exp: …`, `docs: …`.
 - `git pull --rebase` trước khi push. Xung đột ở `summary.csv` → giữ cả hai phía (chỉ append).
 - **Không bao giờ commit:** `.env`, API key, `data/`, weights model (`*.safetensors`, `*.bin`,
@@ -95,5 +134,6 @@ thống nhất. **Đọc hết trước khi sửa code.** `CLAUDE.md` chỉ impo
 
 ## 8. Ghi chép tiến độ
 
-Mỗi khi xong một hạng mục trong `docs/plan.md`: tick checkbox, ghi 1 dòng kết quả chính
-(vd. "Provence th=0.1: ratio 4.9x, ctx_recall 0.95, n=20"). Đây là nguồn để viết báo cáo.
+Tiến độ được ghi trong `docs/tasks.md` theo quy trình §0. Mỗi task xong có 1 dòng kết quả chính
+(vd. "Provence τ=0.1: 4,6×, recall 0,916, n=500"); đây là nguồn để viết báo cáo.
+`docs/plan.md` giữ kế hoạch/ma trận tổng thể, chỉ cập nhật khi đổi hướng.

@@ -1,0 +1,93 @@
+\section{Nghiên cứu liên quan}
+\label{sec:related}
+
+Theo khảo sát của \citet{li2025survey}, các phương pháp nén prompt chia thành hai nhóm lớn:
+\emph{nén cứng} (hard prompt) -- đầu ra vẫn là văn bản, dùng được với mọi LLM kể cả qua API; và
+\emph{nén mềm} (soft prompt) -- nén ngữ cảnh thành vector/KV-cache, đòi hỏi can thiệp vào kiến trúc
+LLM. Bảng~\ref{tab:related} tóm tắt các công trình tiêu biểu.
+
+\subsection{Nén cứng ở mức token}
+
+\textbf{Selective Context}~\cite{li2023selective} dùng một LM nhỏ (GPT-2) tính lượng thông tin
+(self-information) của từng cụm từ và xoá các cụm ít thông tin. \textbf{LLMLingua}~\cite{jiang2023llmlingua}
+mở rộng ý tưởng với cơ chế phân bổ ngân sách theo phần của prompt và nén lặp theo đoạn (iterative
+token-level compression) dùng perplexity của một LM nhỏ. \textbf{LongLLMLingua}~\cite{jiang2024longllmlingua}
+thích nghi LLMLingua cho ngữ cảnh dài và RAG: (i) xếp hạng tài liệu theo perplexity có điều kiện
+câu hỏi (coarse-grained), (ii) phân bổ tỉ lệ nén động theo thứ hạng, (iii) sắp xếp lại tài liệu để
+giảm hiện tượng lost-in-the-middle. Trên bộ NQ 20 tài liệu, LongLLMLingua tăng độ chính xác của
+GPT-3.5-Turbo lên tới 17,1 điểm khi nén 4 lần. \textbf{LLMLingua-2}~\cite{pan2024llmlingua2} chuyển bài
+toán thành phân loại token (giữ/bỏ) bằng một bộ mã hoá hai chiều (XLM-RoBERTa-large) được chưng cất
+từ nhãn do GPT-4 sinh ra trên MeetingBank; nhanh hơn 3--6 lần LLMLingua nhưng \emph{không} dùng câu
+hỏi (task-agnostic).
+
+\subsection{Nén cứng ở mức câu/đoạn (context pruning)}
+
+\textbf{RECOMP}~\cite{xu2024recomp} huấn luyện bộ nén trích xuất (chọn câu) và bộ nén tóm tắt cho RAG.
+\textbf{CompAct}~\cite{yoon2024compact} nén tích cực nhiều vòng bằng LLM 7B; \textbf{EXIT}~\cite{hwang2025exit}
+phân loại câu có xét ngữ cảnh bằng Gemma-2B. \textbf{Provence}~\cite{chirkova2025provence} (ICLR 2025)
+huấn luyện một cross-encoder DeBERTa-v3 vừa \emph{xếp hạng lại} đoạn văn vừa \emph{gắn nhãn câu} cần
+giữ trong một lượt suy luận, nên chi phí nén gần như bằng không nếu pipeline đã có bước rerank;
+ngưỡng xác suất quyết định mức nén. Các biến thể mới gồm \textbf{XProvence}~\cite{xprovence2026}
+(đa ngôn ngữ, ECIR 2026) và \textbf{OpenProvence}~\cite{openprovence} (mã nguồn và dữ liệu mở, giấy
+phép MIT, backbone ModernBERT). Gần đây, \textbf{CORE}~\cite{cui2025core} (ICML 2026) huấn luyện bộ nén
+bằng học tăng cường theo chất lượng câu trả lời, và \textbf{Sentinel}~\cite{zhang2025sentinel} chọn câu
+dựa trên attention của một LM 0,5B.
+
+\subsection{Nén mềm và KV-cache}
+
+\textbf{xRAG}~\cite{cheng2024xrag} chiếu embedding của tài liệu thành \emph{một} token mềm;
+\textbf{PISCO}~\cite{louis2025pisco} và \textbf{OSCAR}~\cite{louis2025oscar} nén mỗi tài liệu thành vài
+vector bằng bộ nén được huấn luyện cùng LLM; \textbf{REFRAG}~\cite{lin2025refrag} đưa embedding các
+khối văn bản trực tiếp vào bộ giải mã và tăng tốc time-to-first-token tới hơn 30 lần. Các phương pháp
+này đạt tỉ lệ nén rất cao nhưng cần LLM tự host (thường 7B trở lên) và huấn luyện riêng, nên nằm ngoài
+phạm vi thực nghiệm của nhóm (LLM được gọi qua giao diện tương thích OpenAI).
+
+\subsection{Truy hồi hiệu quả}
+
+\textbf{BM25S}~\cite{lu2024bm25s} tính trước điểm BM25 thành ma trận thưa, nhanh hơn hàng trăm lần so
+với các cài đặt Python truyền thống. Ở phía dense retrieval~\cite{karpukhin2020dpr}, các mô hình
+nhúng nhỏ như BGE~\cite{xiao2024cpack} hay Qwen3-Embedding~\cite{zhang2025qwen3emb} và
+EmbeddingGemma~\cite{vera2025embeddinggemma} hỗ trợ \textbf{Matryoshka Representation
+Learning}~\cite{kusupati2022matryoshka} -- cắt ngắn vector (ví dụ 1024$\to$64 chiều) mà vẫn giữ phần
+lớn chất lượng. \textbf{Lượng tử hoá embedding}~\cite{hfquant2024} (int8 hoặc nhị phân kèm
+rescoring) giảm 4--32 lần bộ nhớ. \textbf{Static embedding}~\cite{hfstatic2025} bỏ hẳn Transformer ở
+bước mã hoá truy vấn, nhanh hơn hàng trăm lần trên CPU. Thư viện \textbf{Faiss}~\cite{douze2024faiss}
+cung cấp tìm kiếm chính xác (flat) và xấp xỉ (HNSW, IVF-PQ).
+
+\subsection{Bộ dữ liệu và giao thức đánh giá}
+
+\citet{liu2024lost} xây dựng bộ \emph{multi-document QA} từ NaturalQuestions-Open~\cite{kwiatkowski2019nq}:
+mỗi câu hỏi kèm 20 đoạn Wikipedia (1 đoạn chứa đáp án do người gán nhãn, 19 đoạn gây nhiễu do
+Contriever truy hồi), đoạn vàng được đặt ở vị trí 1, 5, 10, 15 hoặc 20. Đây là giao thức mà
+LongLLMLingua và LLMLingua-2 dùng để báo cáo kết quả theo vị trí, nên chúng tôi chọn làm benchmark
+chính. Các bộ công cụ như FlashRAG~\cite{jin2025flashrag} đánh giá bộ nén trên NQ/TriviaQA/HotpotQA với
+thiết lập khác (top-5, Llama-3-8B, EM).
+
+\begin{table}[t]
+\centering
+\caption{Tổng quan các công trình liên quan (H = nén cứng, S = nén mềm, R = truy hồi).}
+\label{tab:related}
+\small
+\begin{tabularx}{\linewidth}{l l c X c}
+\toprule
+Phương pháp & Venue & Loại & Ý tưởng chính & Dùng với API \\
+\midrule
+Selective Context~\cite{li2023selective} & EMNLP'23 & H-token & Self-information từ GPT-2 & \checkmark \\
+LLMLingua~\cite{jiang2023llmlingua} & EMNLP'23 & H-token & Perplexity LM nhỏ, nén lặp & \checkmark \\
+LongLLMLingua~\cite{jiang2024longllmlingua} & ACL'24 & H-token & Có điều kiện câu hỏi, coarse-to-fine & \checkmark \\
+LLMLingua-2~\cite{pan2024llmlingua2} & ACL'24 F & H-token & Phân loại token, chưng cất từ GPT-4 & \checkmark \\
+RECOMP~\cite{xu2024recomp} & ICLR'24 & H-câu & Trích xuất/tóm tắt có huấn luyện & \checkmark \\
+CompAct~\cite{yoon2024compact} & EMNLP'24 & H-câu & Nén tích cực bằng LLM 7B & \checkmark \\
+EXIT~\cite{hwang2025exit} & ACL'25 F & H-câu & Phân loại câu có ngữ cảnh & \checkmark \\
+Provence~\cite{chirkova2025provence} & ICLR'25 & H-câu & Rerank + pruning trong 1 lượt & \checkmark \\
+XProvence~\cite{xprovence2026} & ECIR'26 & H-câu & Provence đa ngôn ngữ & \checkmark \\
+CORE~\cite{cui2025core} & ICML'26 & H-câu & Bộ nén huấn luyện bằng RL & \checkmark \\
+xRAG~\cite{cheng2024xrag} & NeurIPS'24 & S & 1 token mềm / tài liệu & -- \\
+OSCAR~\cite{louis2025oscar} & ICLR'26 & S & Nén mềm trực tuyến + rerank & -- \\
+REFRAG~\cite{lin2025refrag} & 2025 & S & Embedding khối vào bộ giải mã & -- \\
+BM25S~\cite{lu2024bm25s} & 2024 & R & BM25 thưa, tính trước & \checkmark \\
+MRL~\cite{kusupati2022matryoshka} & NeurIPS'22 & R & Embedding cắt ngắn được & \checkmark \\
+Qwen3-Emb.~\cite{zhang2025qwen3emb} & 2025 & R & Embedding 0,6B, MRL 32--1024 & \checkmark \\
+\bottomrule
+\end{tabularx}
+\end{table}
