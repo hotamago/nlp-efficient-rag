@@ -4,6 +4,8 @@ PISCO = Mistral-7B-Instruct-v0.2 + encoder/decoder LoRA adapters; each document 
 compressed once into 8 memory vectors (16x). Rows written to results/compression with
 llm_model "mistral-7b-nf4+pisco" (compressed) or "mistral-7b-nf4" (same backbone, adapters off,
 documents as text, same PISCO prompt) so the compression effect is measured on one backbone.
+Note: the text rows still use PISCO's retrained first/last layers (embeddings, lm_head), i.e.
+they are a same-backbone control, not the stock Mistral-7B-Instruct-v0.2.
 
     uv run python scripts/eval_pisco.py --n 500 --positions 0 9 19
 """
@@ -33,6 +35,7 @@ SYSTEM = (
     "You are a helpful assistant. Your task is to extract relevant information from provided "
     "documents and to answer to questions as briefly as possible."
 )
+DOC_MAX_TOKENS = 128
 N_MEM = 8  # doc_max_length 128 / compr_rate 16
 RERANKER = "cross-encoder/ms-marco-MiniLM-L6-v2"
 
@@ -82,6 +85,12 @@ def generate_text(model, prompts: list[str], max_new_tokens: int) -> list[str]:
     return tok.batch_decode(out[:, inp["input_ids"].shape[1] :], skip_special_tokens=True)
 
 
+def encoder_view(tok, text: str) -> str:
+    """The part of a document PISCO compresses: its first doc_max_length (128) tokens."""
+    ids = tok(text, add_special_tokens=False)["input_ids"][:DOC_MAX_TOKENS]
+    return tok.decode(ids)
+
+
 def select(examples: list[Example], variant: str, reranker) -> list[list[Doc]]:
     if variant in ("all", "full"):
         return [ex.docs for ex in examples]
@@ -119,6 +128,8 @@ def run(model, mode: str, variant: str, pos: int, n: int, bs: int, reranker, run
         dt = (time.perf_counter() - t0) / len(exs)
         for ex, s, pred in zip(exs, sel, preds, strict=True):
             kept = render_docs(s)
+            if mode == "pisco":  # recall over what the encoder actually sees (<=128 tokens/doc)
+                kept = "\n".join(encoder_view(model.decoder_tokenizer, d.render()) for d in s)
             comp = N_MEM * len(s) if mode == "pisco" else count_tokens(kept)
             rows.append({
                 "run_id": run_id, "qid": ex.qid, "gold_pos": pos, "question": ex.question,
@@ -135,7 +146,9 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=500)
     ap.add_argument("--positions", type=int, nargs="+", default=[0, 9, 19])
-    ap.add_argument("--bs", type=int, default=8)
+    ap.add_argument("--bs", type=int, default=8, help="batch size for PISCO (compressed) configs")
+    ap.add_argument("--bs-text", type=int, default=4, help="batch size for full-text configs")
+    ap.add_argument("--track", default="compression", help="e.g. compression_smoke for tests")
     ap.add_argument(
         "--configs", nargs="+",
         default=["pisco:all", "pisco:rerank5", "text:full", "text:rerank5", "text:closedbook",
@@ -155,9 +168,10 @@ def main() -> None:
         run_id = new_run_id(f"{method}_{variant}")
         positions = [0] if variant in ("closedbook", "oracle") else args.positions
         for pos in positions:
-            rows = run(model, mode, variant, pos, args.n, args.bs, reranker, run_id)
+            bs = args.bs if mode == "pisco" else args.bs_text
+            rows = run(model, mode, variant, pos, args.n, bs, reranker, run_id)
             record_run(rows, run_id=run_id, method=method, params=params, gold_pos=pos,
-                       llm_model=llm, seed=SEED)  # fmt: skip
+                       llm_model=llm, seed=SEED, track=args.track)  # fmt: skip
 
 
 if __name__ == "__main__":
