@@ -173,7 +173,21 @@ mỗi hệ} (Bảng~\ref{tab:published}) thay vì số tuyệt đối.
 \subsection{Nén mềm}
 \label{sec:res-soft}
 
-% TODO(T09): PISCO (T12) + own encode-once model (T16-T18)
+\begin{table}[t]
+\centering
+\caption{Nén mềm so với văn bản trên \emph{cùng} một reader (accuracy \%, 500 câu/vị trí; rerank: chỉ
+vị trí 10). Token: số vector nhớ hoặc token văn bản đưa vào reader; Nén: so với 20 đoạn văn bản.}
+\label{tab:soft}
+\small
+\begin{tabular}{l r r r r r r}
+\toprule
+Cấu hình & @1 & @10 & @20 & TB & Token & Nén \\
+\midrule
+\inputtable{tables/soft.tex}
+\end{tabular}
+\end{table}
+
+% TODO(T09): text for PISCO (T12) + own encode-once model (T16-T18)
 
 %------------------------------------------------------------------------------
 \subsection{Truy hồi hiệu quả}
