@@ -55,7 +55,7 @@ hàng ``văn bản'' của PISCO dùng đúng prompt đó với tài liệu dạ
 \caption{Siêu tham số huấn luyện bộ nén mềm encode-once của nhóm.}
 \label{tab:soft-hparams}
 \small
-\begin{tabular}{l l}
+\begin{tabularx}{\linewidth}{l X}
 \toprule
 Tham số & Giá trị \\
 \midrule
@@ -70,5 +70,5 @@ Tối ưu & AdamW, lr $10^{-4}$, warmup 50 bước, cosine, clip 1,0 \\
 Batch & 8 mẫu/bước (tích luỹ gradient), 1 epoch $\approx$ 1.875 bước \\
 Bộ nhớ & gradient checkpointing; $\approx$5GB VRAM \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
