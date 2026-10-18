@@ -1,0 +1,1 @@
+{"device": "cuda", "threads": 10, "method": "bm25_topk", "params": "{\"k\": 5}", "n": 20, "mean_ms": 2.3381060502288165, "median_ms": 2.279437001561746}

@@ -1,0 +1,24 @@
+\multicolumn{9}{l}{\textit{Tham chiếu}} \\
+\quad Full (20 docs) & 65.6 & 62.2 & 68.0 & 65.3 & 2875 & 1.0$\times$ & 100.0 & 0 \\
+\quad Oracle & 92.6 & 92.6 & 92.6 & 92.6 & 113 & 25.5$\times$ & 100.0 & 0 \\
+\quad Closed-book & 38.8 & 38.8 & 38.8 & 38.8 & 0 & 2874.3$\times$ & 0.2 & 0 \\
+\midrule
+\multicolumn{9}{l}{\textit{Prompt}} \\
+\quad Truncate 730 & 74.0 & 19.6 & 19.6 & 37.7 & 730 & 3.9$\times$ & 44.0 & 0 \\
+\midrule
+\multicolumn{9}{l}{\textit{Tài liệu}} \\
+\quad Rerank top-10 & 65.0 & 62.2 & 64.0 & 63.7 & 1425 & 2.0$\times$ & 89.8 & 14 \\
+\quad BM25 top-5 & -- & 45.4 & -- & -- & 705 & 4.1$\times$ & 53.2 & 2 \\
+\quad Dense top-5 & -- & 56.0 & -- & -- & 702 & 4.1$\times$ & 69.0 & 121 \\
+\quad Rerank top-5 & 64.2 & 62.0 & 62.0 & 62.7 & 701 & 4.1$\times$ & 79.4 & 14 \\
+\midrule
+\multicolumn{9}{l}{\textit{Token}} \\
+\quad LLMLingua-2 r=0.5 & 56.0 & 52.6 & 52.0 & 53.5 & 1500 & 1.9$\times$ & 88.2 & 462 \\
+\quad LLMLingua-2 r=0.25 & 36.6 & 40.8 & 37.6 & 38.3 & 827 & 3.5$\times$ & 68.0 & 462 \\
+\quad Rerank-10 $\rightarrow$ LLMLingua-2 & 54.0 & 53.8 & 52.4 & 53.4 & 743 & 3.9$\times$ & 79.2 & 253 \\
+\midrule
+\multicolumn{9}{l}{\textit{Câu}} \\
+\quad Provence $\tau$=0.01 & 64.4 & 61.0 & 63.2 & 62.9 & 1136 & 2.5$\times$ & 95.8 & 212 \\
+\quad OpenProvence $\tau$=0.1 & 63.0 & 61.4 & 62.0 & 62.1 & 1091 & 2.6$\times$ & 96.4 & 455 \\
+\quad Provence $\tau$=0.1 & 63.8 & 62.6 & 65.6 & \best{64.0} & 621 & 4.6$\times$ & 91.6 & 210 \\
+\bottomrule

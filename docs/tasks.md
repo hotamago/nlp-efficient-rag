@@ -17,9 +17,8 @@ Chỉ sửa dòng task của mình (và thêm dòng mới ở cuối). Ngày the
 
 | ID | Task | Người nhận | Trạng thái | Phụ thuộc | Cập nhật / kết quả |
 |---|---|---|---|---|---|
-| T03 | Track A – pha sinh câu trả lời (vLLM Qwen2.5-7B-AWQ) cho toàn bộ ma trận trong `scripts/run_all_compression.sh` | Sơn/Claude | doing | T02 | 18/10 15:20 – xong closed-book 38,8 · oracle 92,6 · full 65,6/62,2/68,0 (vị trí 1/10/20); còn 11 cấu hình nén (~1 giờ) |
 | T07 | Đo độ trễ bộ nén CPU vs GPU: `uv run python scripts/bench_device.py --n 20` hai lần, với `EFFRAG_DEVICE=cuda` và `EFFRAG_DEVICE=cpu` | Sơn/Claude | doing | – | 18/10 16:00 – CPU 8 luồng xong (ms/câu): BM25 2 · rerank 196 · dense 361 · OpenProvence 1.598 · Provence 4.906 · LLMLingua-2 13.104 · LongLLMLingua 14.837; GPU chạy sau T03 |
-| T08 | Bảng + hình: `uv run python scripts/make_figures.py` → `docs/report/tables/`, `docs/report/figures/`, `docs/slide/figures/` | Sơn/Claude | todo | T03, T07 | |
+| T08 | Bảng + hình: `uv run python scripts/make_figures.py` → `docs/report/tables/`, `docs/report/figures/`, `docs/slide/figures/` | Sơn/Claude | doing | T03, T07 | |
 | T09 | Báo cáo LaTeX: viết abstract, results, conclusion, contribution, appendix (`docs/report/sections/`) | Sơn/Claude | todo | T08 | Đã có: titlepage, introduction, related, method, implementation |
 | T10 | Slide Beamer 15–30 trang theo style `docs/slide/template.tex` (HUST đỏ/trắng) → `docs/slide/slides.tex` | Sơn/Claude | doing | T08 | Hình lấy từ `docs/slide/figures/`. File template gốc có tên/MSSV nhóm khác → gitignore, không commit |
 | T12 | P0 – đánh giá nén mềm có sẵn: `naver/pisco-mistral` (4-bit, sdpa) trên LITM 500×{1,10,20} + full/closed-book/oracle của Mistral cùng prompt PISCO + lai "rerank top-5 → PISCO" | Sơn/Claude | doing | T03 (GPU) | 18/10 15:20 – đã tải xong; `scripts/eval_pisco.py` viết xong, chờ GPU (sau T03) |
@@ -41,3 +40,4 @@ Chỉ sửa dòng task của mình (và thêm dòng mới ở cuối). Ngày the
 | T05 | Nghiên cứu nén mềm + cơ chế "retrieval weight" của DeepSeek | Sơn/Claude | DeepSeek V3.2/V4/V4.1-Flash: *lightning indexer* (chọn top-k token, weight riêng); nhóm chốt P0 + P1 có cổng dừng – `docs/research_soft_compression.md` |
 | T19 | Chuyển báo cáo sang style HUST đỏ/trắng (XeLaTeX), thêm mục "Nén mềm" + DeepSeek vào related/method | Sơn/Claude | Commit `564612f`; font TeX Gyre theo tên file (chạy được trên Overleaf/tectonic) |
 | T11 | Kiểm tra demo Gradio (2 tab) trên CPU + ảnh chụp | Sơn/Claude | Chạy được hoàn toàn trên CPU; sửa câu hỏi mặc định tab end-to-end; ảnh `docs/report/figures/demo*.png` (Playwright headless), đã đưa vào báo cáo §Demo và slide |
+| T03 | Track A – pha sinh câu trả lời (vLLM Qwen2.5-7B-AWQ), 15 cấu hình | Sơn/Claude | TB 3 vị trí: full 65,3 · Provence τ=0,1 64,0 (4,6×, không giảm có ý nghĩa) · rerank-5 62,7 (4,1×) · LLMLingua-2 r=0,25 38,3 (≈ closed-book 38,8) · LongLLMLingua 64,0 @10 (n=200) – `results/compression/`, `main_table.csv`, `significance.csv`, `errors.csv` |
