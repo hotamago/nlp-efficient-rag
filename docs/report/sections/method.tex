@@ -76,7 +76,7 @@ Câu & Provence & deberta-v3-large & \checkmark & 435M \\
 
 \paragraph{Tính bất biến theo thứ tự.} Các bộ nén mức tài liệu, mức câu và LLMLingua-2 xử lý từng đoạn
 độc lập với vị trí của nó. Chúng tôi tận dụng tính chất này: kết quả nén của một tập đoạn được ghi nhớ
-và tái sử dụng cho năm vị trí đoạn vàng (chỉ thứ tự thay đổi), giảm 5 lần thời gian nén; độ trễ báo cáo
+và tái sử dụng cho mọi vị trí đoạn vàng (chỉ thứ tự thay đổi), giảm 3 lần thời gian nén; độ trễ báo cáo
 là độ trễ đo ở lần tính đầu tiên. Sau khi nén, các đoạn còn lại \emph{giữ nguyên thứ tự} và được đánh
 số lại, nhờ đó biến ``vị trí đoạn vàng'' vẫn có ý nghĩa, giống thiết lập của các bảng đã công bố.
 
@@ -102,8 +102,8 @@ adapter LoRA~\cite{hu2022lora} riêng:
 \end{itemize}
 Vì $E$ không nhìn câu hỏi, $M_j$ có thể \textbf{tính trước một lần cho cả kho} (encode-once) và
 lưu lại như một chỉ mục. Khi hỏi, decoder chỉ xử lý khoảng $20\times(m+\text{token tiêu đề})$
-vị trí thay vì $\sim$2.900 token, tức tỉ lệ nén ngữ cảnh khoảng $6\times$ nếu tính cả tiêu đề và
-$\sim$18$\times$ nếu chỉ tính phần nội dung.
+vị trí thay vì 2.874 token: trung bình 416 vị trí ($m=8$, 500 câu), tức tỉ lệ nén ngữ cảnh
+6,9$\times$ nếu tính cả tiêu đề và 16,4$\times$ nếu chỉ tính phần nội dung.
 
 \paragraph{Biến thể lai (cứng + mềm).} Lấy cảm hứng từ việc DeepSeek-V4 kết hợp ``chọn top-$k$ mục
 để nhìn chi tiết'' với ``nhìn toàn bộ ở dạng nén''~\cite{deepseek2026v4}, biến thể \emph{hybrid} giữ
@@ -153,7 +153,16 @@ cần lưu vector float của kho.
 \label{sec:protocol}
 
 \paragraph{Dữ liệu.} 500 câu hỏi lấy ngẫu nhiên (seed 42) từ 2.655 câu của NQ-Open 20 tài liệu; cùng
-500 câu cho cả năm vị trí đoạn vàng (1, 5, 10, 15, 20), tổng 2.500 prompt cho mỗi cấu hình.
+500 câu cho ba vị trí đoạn vàng \textbf{1, 10, 20} -- đúng ba vị trí mà LongLLMLingua và LLMLingua-2
+công bố số liệu, nên mọi dòng của chúng tôi đều có điểm đối chiếu. Hai vị trí 5 và 15 bị bỏ vì chỉ làm
+mịn đường cong mà không có số công bố để so sánh, trong khi tăng 67\% chi phí. Tổng cộng 1.500 prompt
+cho mỗi cấu hình; các tham chiếu không phụ thuộc vị trí (closed-book, oracle) chỉ chạy một lần.
+
+\paragraph{Rút gọn ma trận thí nghiệm.} Thay vì chạy mọi tổ hợp, chúng tôi (i) chạy \emph{dry-run}
+miễn phí cho mọi bộ nén để đo tỉ lệ nén và context recall, rồi chỉ gọi LLM cho các cấu hình đại diện;
+(ii) với BM25/Dense top-5 -- vốn có số công bố và recall thấp rõ rệt -- chỉ chạy ở vị trí 10;
+(iii) LongLLMLingua (chậm nhất, $\approx$0,6 s/câu) chỉ chạy 200 câu ở vị trí 10; (iv) dùng lại số
+liệu GPT-3.5 đã công bố làm tham chiếu thay vì tái lập.
 
 \paragraph{Prompt.} Dùng nguyên mẫu prompt của \citet{liu2024lost}:
 \begin{lstlisting}

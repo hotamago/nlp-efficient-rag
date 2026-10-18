@@ -54,11 +54,11 @@ Nền tảng & PyTorch 2.14, Transformers 4.57, tiktoken 0.14, Gradio 6 \\
 \subsection{Thông số thực nghiệm}
 
 \begin{itemize}
-  \item \textbf{Phần cứng}: 1 GPU NVIDIA RTX 4070 SUPER 12GB, CPU 20 luồng (giới hạn 4 luồng cho mỗi
-  tiến trình), 24GB RAM, WSL2.
+  \item \textbf{Phần cứng}: 1 GPU NVIDIA RTX 4070 SUPER 12GB, CPU 20 luồng (mặc định 4 luồng cho mỗi
+  tiến trình, 8 luồng khi đo độ trễ CPU), 24GB RAM, WSL2.
   \item \textbf{Sinh câu trả lời}: Qwen2.5-7B-Instruct (lượng tử AWQ 4-bit), \texttt{temperature}=0,
   tối đa 100 token sinh (như \citet{liu2024lost}), độ dài ngữ cảnh tối đa 4.096 token.
-  \item \textbf{Lấy mẫu}: 500 câu hỏi, seed 42, 5 vị trí đoạn vàng $\{1,5,10,15,20\}$.
+  \item \textbf{Lấy mẫu}: 500 câu hỏi, seed 42, 3 vị trí đoạn vàng $\{1,10,20\}$.
   \item \textbf{Ngân sách nén}: tương ứng 2$\times$ ($\approx$1.450 token) và 4$\times$ ($\approx$730 token)
   so với $\approx$2.900 token của ngữ cảnh đầy đủ -- cùng hai mức của bảng kết quả LongLLMLingua.
   \item \textbf{LongLLMLingua}: \texttt{condition\_compare=True}, \texttt{condition\_in\_question="after"},
