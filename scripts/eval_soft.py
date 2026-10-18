@@ -1,0 +1,132 @@
+"""Evaluate the soft compressor.
+
+Gate (Tevatron dev, k=20, not LITM): base closed-book vs base full-text vs soft memory.
+    uv run python scripts/eval_soft.py gate --run data/soft/run1
+
+LITM NQ-20 (same 500 questions / positions as Track A); writes results/compression/ rows with
+llm_model "<base>+soft". Documents are encoded once per question and reused for every position
+(encode-once); `hybrid` keeps the cross-encoder's top-1 document as text.
+    uv run python scripts/eval_soft.py litm --run data/soft/run1 --variants soft hybrid
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import time
+from datetime import datetime
+from pathlib import Path
+
+import numpy as np
+import torch
+from tqdm import tqdm
+
+from effrag.config import DATA_DIR, RESULTS_DIR, SEED
+from effrag.data import load_litm_nq
+from effrag.metrics import best_subspan_em, exact_match, f1
+from effrag.results import append_summary, git_commit, new_run_id, write_jsonl
+from effrag.soft.model import SoftRAG
+from effrag.tokens import count_tokens
+
+
+def gate(model: SoftRAG, run: str, n: int) -> None:
+    data = [json.loads(x) for x in open(DATA_DIR / "soft" / "dev.jsonl")][:n]
+    acc = {"closedbook": [], "full_text": [], "soft": []}
+    for ex in tqdm(data, desc="gate"):
+        docs = [tuple(d) for d in ex["docs"]]
+        q, ans = ex["question"], ex["answers"]
+        acc["closedbook"].append(best_subspan_em(model.generate(q, [], base=True), ans))
+        acc["full_text"].append(best_subspan_em(model.generate(q, docs, base=True), ans))
+        acc["soft"].append(best_subspan_em(model.generate(q, docs), ans))
+    res = {k: round(100 * float(np.mean(v)), 1) for k, v in acc.items()}
+    ok = res["soft"] >= res["closedbook"] + 10 and res["soft"] >= 0.7 * res["full_text"]
+    res |= {"n": len(data), "pass": bool(ok)}
+    print(json.dumps(res))
+    (Path(run) / "gate.json").write_text(json.dumps(res))
+
+
+def litm(model: SoftRAG, run: str, variants: list[str], positions: list[int], n: int) -> None:
+    reranker = None
+    if "hybrid" in variants:
+        from sentence_transformers import CrossEncoder
+
+        reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L6-v2", device="cuda")
+    mem_cache: dict[tuple[str, str], torch.Tensor] = {}
+    base = model.cfg.base_model.split("/")[-1].lower()
+    for variant in variants:
+        run_id = new_run_id(f"soft_{variant}")
+        params = {"n_mem": model.cfg.n_mem, "variant": variant, "run": Path(run).name}
+        for pos in positions:
+            rows = []
+            for ex in tqdm(load_litm_nq(pos, n=n, seed=SEED), desc=f"{variant} gold@{pos}"):
+                docs = [(d.title, d.text) for d in ex.docs]
+                open_mask = [False] * len(docs)
+                if variant == "hybrid":
+                    s = reranker.predict([(ex.question, d.render()) for d in ex.docs])
+                    open_mask[int(np.argmax(s))] = True
+                t0 = time.perf_counter()
+                todo = [d for d, o in zip(docs, open_mask, strict=True) if not o]
+                new = [d for d in todo if d not in mem_cache]
+                if new:
+                    with torch.no_grad():
+                        for d, m in zip(new, model.encode_docs(new), strict=True):
+                            mem_cache[d] = m
+                compress_s = time.perf_counter() - t0
+                mem = torch.stack([mem_cache[d] for d in todo]) if todo else None
+                t1 = time.perf_counter()
+                pred = model.generate(ex.question, docs, mem, open_mask)
+                llm_s = time.perf_counter() - t1
+                full = "\n".join(f"Document [{i}]{d.render()}" for i, d in enumerate(ex.docs, 1))
+                # decoder context positions: titles/open text as tokens + n_mem vectors per doc
+                kept = "\n".join(
+                    f"Document [{i}](Title: {t}) " + (x if o else "")
+                    for i, ((t, x), o) in enumerate(zip(docs, open_mask, strict=True), 1)
+                )
+                comp = count_tokens(kept) + model.cfg.n_mem * len(todo)
+                rows.append({
+                    "run_id": run_id, "qid": ex.qid, "gold_pos": pos, "question": ex.question,
+                    "answers": ex.answers, "orig_tokens": count_tokens(full), "comp_tokens": comp,
+                    "compress_s": compress_s, "ctx_recall": None, "prediction": pred,
+                    "llm_s": llm_s, "prompt_tokens": None,
+                    "accuracy": best_subspan_em(pred, ex.answers),
+                    "em": exact_match(pred, ex.answers), "f1": f1(pred, ex.answers),
+                })  # fmt: skip
+            write_jsonl(RESULTS_DIR / "compression" / f"{run_id}_gold{pos}.jsonl", rows)
+
+            def mean(key: str, rows: list[dict] = rows) -> float:
+                return float(np.mean([r[key] for r in rows]))
+
+            comp_tok = mean("comp_tokens")
+            summary = {
+                "run_id": run_id, "date": f"{datetime.now():%Y-%m-%d %H:%M}", "git": git_commit(),
+                "track": "compression", "dataset": "litm_nq20", "method": "soft",
+                "params": json.dumps(params, sort_keys=True), "gold_pos": pos, "n": len(rows),
+                "seed": SEED, "llm_model": f"{base}+soft", "ctx_recall": float("nan"),
+                "accuracy": round(mean("accuracy"), 4), "em": round(mean("em"), 4),
+                "f1": round(mean("f1"), 4), "orig_tokens": round(mean("orig_tokens"), 1),
+                "comp_tokens": round(comp_tok, 1),
+                "ratio": round(mean("orig_tokens") / max(comp_tok, 1), 2),
+                "compress_ms": round(1000 * mean("compress_s"), 1),
+                "llm_ms": round(1000 * mean("llm_s"), 1), "cost_usd_per_1k_q": float("nan"),
+            }  # fmt: skip
+            append_summary("compression", summary)
+            print(f"{variant} gold@{pos}: acc={summary['accuracy']} ratio={summary['ratio']}")
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("mode", choices=["gate", "litm"])
+    ap.add_argument("--run", default=str(DATA_DIR / "soft" / "run1"))
+    ap.add_argument("--n", type=int, default=None)
+    ap.add_argument("--variants", nargs="+", default=["soft", "hybrid"])
+    ap.add_argument("--positions", type=int, nargs="+", default=[0, 9, 19])
+    args = ap.parse_args()
+    model = SoftRAG.load(args.run).eval()
+    if args.mode == "gate":
+        gate(model, args.run, args.n or 200)
+    else:
+        litm(model, args.run, args.variants, args.positions, args.n or 500)
+
+
+if __name__ == "__main__":
+    main()
