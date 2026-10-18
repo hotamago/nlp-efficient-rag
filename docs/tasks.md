@@ -18,14 +18,13 @@ Chỉ sửa dòng task của mình (và thêm dòng mới ở cuối). Ngày the
 | ID | Task | Người nhận | Trạng thái | Phụ thuộc | Cập nhật / kết quả |
 |---|---|---|---|---|---|
 | T08 | Bảng + hình: `uv run python scripts/make_figures.py` → `docs/report/tables/`, `docs/report/figures/`, `docs/slide/figures/` | Sơn/Claude | doing | T03, T07 | |
-| T09 | Báo cáo LaTeX: viết abstract, results, conclusion, contribution, appendix (`docs/report/sections/`) | Sơn/Claude | todo | T08 | Đã có: titlepage, introduction, related, method, implementation |
+| T09 | Báo cáo LaTeX: viết abstract, results, conclusion, contribution, appendix (`docs/report/sections/`) | Sơn/Claude | doing | T08 | 18/10 17:30 – xong results (trừ nén mềm), CPU, conclusion (trừ RQ5), contribution, appendix; còn abstract + mục nén mềm |
 | T10 | Slide Beamer 15–30 trang theo style `docs/slide/template.tex` (HUST đỏ/trắng) → `docs/slide/slides.tex` | Sơn/Claude | doing | T08 | Hình lấy từ `docs/slide/figures/`. File template gốc có tên/MSSV nhóm khác → gitignore, không commit |
-| T12 | P0 – đánh giá nén mềm có sẵn: `naver/pisco-mistral` (4-bit, sdpa) trên LITM 500×{1,10,20} + full/closed-book/oracle của Mistral cùng prompt PISCO + lai "rerank top-5 → PISCO" | Sơn/Claude | doing | T03 (GPU) | 18/10 15:20 – đã tải xong; `scripts/eval_pisco.py` viết xong, chờ GPU (sau T03) |
-| T16 | P1 – tự huấn luyện nén mềm "encode-once" (ý tưởng của nhóm): Qwen2.5-1.5B-Instruct làm encoder+decoder, LoRA, 8 vector nhớ / 128 token, dữ liệu Tevatron NQ-train (~15k, vị trí vàng ngẫu nhiên, k∈{5,10,20}); biến thể lai top-1 dạng text (ý tưởng indexer/CSA của DeepSeek) | Sơn/Claude | doing | – | 18/10 – đang tải Qwen2.5-1.5B + Tevatron; bước tiếp: `scripts/build_soft_train.py`, `scripts/train_soft.py`, smoke 10 bước |
+| T12 | P0 – đánh giá nén mềm có sẵn: `naver/pisco-mistral` (4-bit, sdpa) trên LITM 500×{1,10,20} + full/closed-book/oracle của Mistral cùng prompt PISCO + lai "rerank top-5 → PISCO" | Sơn/Claude | doing | T03 (GPU) | 18/10 17:20 – đang chạy (batch 1, trần VRAM 70%, 5,8 GiB; ~4 s/câu, ~5 h). Rerank-5 chỉ chạy ở vị trí 10 |
+| T16 | P1 – tự huấn luyện nén mềm "encode-once" (ý tưởng của nhóm): Qwen2.5-1.5B-Instruct làm encoder+decoder, LoRA, 8 vector nhớ / 128 token, dữ liệu Tevatron NQ-train (~15k, vị trí vàng ngẫu nhiên, k∈{5,10,20}); biến thể lai top-1 dạng text (ý tưởng indexer/CSA của DeepSeek) | Sơn/Claude | doing | – | 18/10 17:30 – smoke 10 bước: 7 s/bước, 5 GB VRAM (1 epoch ≈ 3,7 h); đã sửa lỗi gradient encoder khi bật checkpointing (`37d0aa0`); chạy full sau T12 |
 | T17 | Cổng dừng P1 (21/10): 200 câu Tevatron-dev; đi tiếp nếu acc ≥ closed-book + 10 điểm và ≥ 70% full-text của reader 1.5B, nếu không thì dừng P1 và viết phân tích thất bại | Sơn/Claude | todo | T16 | |
 | T18 | Đánh giá P1 trên LITM 500×{1,10,20}: soft16x, lai, + các dòng của reader 1.5B (full, closed-book, oracle, 2–3 bộ nén cứng tốt nhất dùng lại context đã nén) | | todo | T17 | |
 | T13 | Track C – end-to-end: retriever tốt nhất (T06: bge-small int8) top-20 → bộ nén tốt nhất (T03) → LLM trên corpus gộp | | todo | T03 | P1 |
-| T14 | Phân tích lỗi: khi nào bộ nén xoá mất đáp án / LLM vẫn sai dù còn bằng chứng (lấy ví dụ từ `results/compression/*.jsonl`) | Sơn/Claude | doing | T03 | Đưa vào mục Results |
 | T15 | Cập nhật `README.md`, `docs/plan.md` theo kết quả cuối | | todo | T09 | |
 
 ## Đã xong
@@ -41,3 +40,4 @@ Chỉ sửa dòng task của mình (và thêm dòng mới ở cuối). Ngày the
 | T11 | Kiểm tra demo Gradio (2 tab) trên CPU + ảnh chụp | Sơn/Claude | Chạy được hoàn toàn trên CPU; sửa câu hỏi mặc định tab end-to-end; ảnh `docs/report/figures/demo*.png` (Playwright headless), đã đưa vào báo cáo §Demo và slide |
 | T03 | Track A – pha sinh câu trả lời (vLLM Qwen2.5-7B-AWQ), 15 cấu hình | Sơn/Claude | TB 3 vị trí: full 65,3 · Provence τ=0,1 64,0 (4,6×, không giảm có ý nghĩa) · rerank-5 62,7 (4,1×) · LLMLingua-2 r=0,25 38,3 (≈ closed-book 38,8) · LongLLMLingua 64,0 @10 (n=200) – `results/compression/`, `main_table.csv`, `significance.csv`, `errors.csv` |
 | T07 | Độ trễ bộ nén CPU vs GPU (n=20, trung vị ms/câu) | Sơn/Claude | GPU/CPU: rerank 16/196 · Provence 200/4.906 · LLMLingua-2 455/13.104 · LongLLMLingua 625/14.837; CPU chậm 12–29×. `results/latency/`, `tables/latency.tex`, báo cáo §res-cpu, slide 14 |
+| T14 | Phân tích lỗi so với ngữ cảnh đầy đủ | Sơn/Claude | Provence: mất BC 1,7% · hỏng dù còn BC 8,4% · được sửa 8,8%; LLMLingua-2 r=0,25 hỏng dù còn BC 19,0% (văn bản vụn) – `scripts/error_analysis.py`, `tables/errors.tex`, báo cáo §res-errors |
