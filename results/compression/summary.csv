@@ -37,3 +37,6 @@ run_id,date,git,track,dataset,method,params,gold_pos,n,seed,llm_model,ctx_recall
 20261018-170922-pisco_all,2026-10-18 17:47,adfce29,compression,litm_nq20,pisco,"{""docs"": ""all""}",0,500,42,mistral-7b-nf4+pisco,0.972,0.478,0.0,0.0969,2874.3,160.0,17.96,0.0,4534.0,nan
 20261018-170922-pisco_all,2026-10-18 18:16,d3232ae,compression,litm_nq20,pisco,"{""docs"": ""all""}",9,500,42,mistral-7b-nf4+pisco,0.972,0.528,0.0,0.1049,2874.3,160.0,17.96,0.0,3558.7,nan
 20261018-170922-pisco_all,2026-10-18 18:46,a99616f,compression,litm_nq20,pisco,"{""docs"": ""all""}",19,500,42,mistral-7b-nf4+pisco,0.972,0.44,0.0,0.0947,2875.0,160.0,17.97,0.0,3486.7,nan
+20261018-184607-mistral_text_full,2026-10-18 19:04,efa62f3,compression,litm_nq20,mistral_text,"{""docs"": ""full""}",0,500,42,mistral-7b-nf4,1.0,0.566,0.01,0.1256,2874.3,2874.3,1.0,0.0,2219.4,nan
+20261018-184607-mistral_text_full,2026-10-18 19:23,efa62f3,compression,litm_nq20,mistral_text,"{""docs"": ""full""}",9,500,42,mistral-7b-nf4,1.0,0.632,0.012,0.1353,2874.3,2874.3,1.0,0.0,2226.2,nan
+20261018-184607-mistral_text_full,2026-10-18 19:41,efa62f3,compression,litm_nq20,mistral_text,"{""docs"": ""full""}",19,500,42,mistral-7b-nf4,1.0,0.612,0.012,0.1422,2875.0,2875.0,1.0,0.0,2149.3,nan
