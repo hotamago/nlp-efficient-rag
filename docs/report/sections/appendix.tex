@@ -62,7 +62,8 @@ Tham số & Giá trị \\
 Mô hình nền & \nolinkurl{Qwen/Qwen2.5-1.5B-Instruct} (bf16) \\
 Adapter & 2 LoRA (encoder, decoder), $r=16$, $\alpha=32$, dropout 0,05, mọi lớp tuyến tính \\
 Vector nhớ / tài liệu & 8 (tài liệu cắt ở 128 token, tức nén 16$\times$) \\
-Chiếu encoder $\to$ decoder & tuyến tính khởi tạo đơn vị, chuẩn hoá L2, nhân hệ số học được \\
+Chiếu encoder $\to$ decoder & bỏ 8 kênh massive activation, tuyến tính khởi tạo đơn vị,
+  chuẩn hoá L2, nhân hệ số học được \\
 Dữ liệu & 15.000 câu NQ (Tevatron), $k\in\{5,10,20\}$ đoạn, âm tính khó BM25 \\
 Chế độ lai & 50\% mẫu giữ 1 đoạn dạng văn bản (đoạn vàng với xác suất 0,6) \\
 Tối ưu & AdamW, lr $10^{-4}$, warmup 50 bước, cosine, clip 1,0 \\

@@ -107,12 +107,13 @@ vị trí thay vì 2.874 token: trung bình 416 vị trí ($m=8$, 500 câu), t�
 
 \paragraph{Khởi tạo.} Trạng thái ẩn cuối của Qwen2.5 lớn hơn embedding token hàng trăm lần và tập
 trung năng lượng vào vài kênh cố định (hiện tượng \emph{massive activation}): ở Qwen2.5-1.5B, kênh lớn
-nhất chiếm trung bình 26\% bình phương chuẩn của vector nhớ. Vì lớp đầu tiên của decoder chuẩn hoá
+nhất chiếm trung bình 28\% bình phương chuẩn của vector nhớ. Vì lớp đầu tiên của decoder chuẩn hoá
 RMS từng vị trí, chỉ \emph{hướng} của vector nhớ có ý nghĩa: chuẩn hoá L2 hay thu nhỏ vector đều không
-giúp gì. Đo trên 6 mẫu huấn luyện khi chưa huấn luyện, loss trên câu trả lời là 15,2 nat (tệ hơn đoán
+giúp gì. Đo trên 6 mẫu huấn luyện (4 mẫu 5 đoạn, 2 mẫu 20 đoạn) khi chưa huấn luyện, trong cùng một
+lần khởi tạo, loss trên câu trả lời là 15,5 nat (tệ hơn đoán
 đều trên từ vựng, $\ln|V|\approx 11{,}9$; closed-book 5,6), tức các vector nhớ làm decoder ``lạc''
 hoàn toàn. Bỏ 8 kênh có biên độ trung bình lớn nhất (xác định một lần trên một câu hiệu chuẩn, lưu
-cùng adapter) đưa loss về 8,7, gần mức khi thay toàn bộ vector nhớ bằng 0 (7,5); quá trình huấn luyện
+cùng adapter) đưa loss về 7,2, gần mức khi thay toàn bộ vector nhớ bằng 0 (7,0); quá trình huấn luyện
 khi đó chỉ cần dạy vector nhớ mang thông tin thay vì trước hết phải ``gỡ'' nhiễu. Ngoài ra, khi bật
 gradient checkpointing, encoder bị tính lại trong lúc lan truyền ngược sau khi adapter decoder đã được
 kích hoạt; chúng tôi chuyển lại adapter encoder bằng một hook trên trạng thái ẩn của encoder (không
