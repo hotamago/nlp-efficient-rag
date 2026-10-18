@@ -71,3 +71,37 @@ Nền tảng & PyTorch 2.14, Transformers 4.57, tiktoken 0.14, Gradio 6 \\
 tôi bọc hàm \texttt{forward} của LM để chuyển đổi qua lại với \texttt{DynamicCache} của Transformers
 mới. Các mô hình Provence dùng mã tuỳ biến (\texttt{trust\_remote\_code}); với OpenProvence, mỗi cặp
 (câu hỏi, đoạn) được đưa vào như một phần tử độc lập của batch.
+
+\subsection{Demo}
+\label{sec:demo}
+
+\texttt{app/demo.py} là ứng dụng Gradio chỉ gọi API của gói \texttt{effrag} (không sao chép logic),
+gồm hai tab:
+\begin{itemize}
+  \item \textbf{So sánh bộ nén}: chọn một câu hỏi trong 200 câu đầu, vị trí đoạn vàng và các bộ nén;
+  ứng dụng hiển thị số token trước/sau nén, thời gian nén, đáp án còn trong ngữ cảnh hay không và
+  câu trả lời của LLM (Hình~\ref{fig:demo}). Với bộ nén theo đoạn, từng câu được giữ được tô xanh,
+  câu bị loại bị gạch, đoạn vàng được đánh dấu (Hình~\ref{fig:demo-context}).
+  \item \textbf{RAG end-to-end}: câu hỏi tự do $\to$ BM25S hoặc bge-small trên kho 50,7k đoạn
+  $\to$ bộ nén $\to$ LLM.
+\end{itemize}
+Khi không có máy chủ LLM, demo vẫn chạy phần truy hồi và nén; mọi mô hình nén chạy được trên CPU
+(\texttt{EFFRAG\_DEVICE=cpu}). Ảnh chụp dưới đây được lấy khi chạy toàn bộ trên CPU (8 luồng), LLM
+qua vLLM.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{demo.png}
+\caption{Tab ``So sánh bộ nén'' của demo (câu hỏi \#3, đoạn vàng ở vị trí 10, chạy trên CPU).
+LLMLingua-2 và Provence đều giữ được đáp án; với Provence, reader 7B trả lời bằng tên diễn viên
+(Cristin Milioti) thay vì tên nhân vật -- một kiểu lỗi được phân tích ở Mục~\ref{sec:res-errors}.}
+\label{fig:demo}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{demo_context.png}
+\caption{Ngữ cảnh sau nén của Provence trong demo: câu được giữ (nền xanh), câu bị loại (gạch ngang),
+đoạn bị loại hoàn toàn và đoạn vàng.}
+\label{fig:demo-context}
+\end{figure}

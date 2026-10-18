@@ -429,8 +429,24 @@
 \end{frame}
 
 %================================================================ 15 — DEMO
-\begin{frame}{Demo (Gradio)}
-  \todo{ảnh chụp app/demo.py}
+\begin{frame}{Demo (Gradio): so sánh bộ nén trên cùng một câu hỏi}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{demo.png}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{demo_context.png}\\[0.6em]
+      {\scriptsize
+      \begin{itemize}\setlength\itemsep{0.2em}
+        \item Token trước/sau, thời gian nén, đáp án còn trong ngữ cảnh, câu trả lời LLM.
+        \item Câu được giữ tô xanh, câu bị loại gạch ngang; đoạn vàng được đánh dấu.
+        \item Tab 2: câu hỏi tự do $\to$ BM25S/bge-small (50,7k đoạn) $\to$ nén $\to$ LLM.
+        \item Chạy hoàn toàn trên CPU; không có LLM vẫn xem được phần nén.
+      \end{itemize}}
+    \end{column}
+  \end{columns}
 \end{frame}
 
 %================================================================ 16 — CONCLUSION
