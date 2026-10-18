@@ -120,6 +120,10 @@ class SoftRAG(nn.Module):
         t = torch.tensor(ids, dtype=torch.long, device=self.device)
         return self.lm.get_input_embeddings()(t)
 
+    def _activate_encoder(self, grad: torch.Tensor) -> torch.Tensor:
+        _set_active_adapter(self.lm, "encoder")
+        return grad
+
     def encode_docs(self, docs: list[tuple[str, str]], batch_size: int = 32) -> torch.Tensor:
         """(title, text) pairs -> memory vectors of shape (n_docs, n_mem, hidden)."""
         _set_active_adapter(self.lm, "encoder")
@@ -146,6 +150,10 @@ class SoftRAG(nn.Module):
             pos = (mask.cumsum(1) - 1).clamp(min=0)
             hs = self.lm(inputs_embeds=embeds, attention_mask=mask, position_ids=pos,
                          output_hidden_states=True).hidden_states[-1]  # fmt: skip
+            if hs.requires_grad:
+                # gradient checkpointing recomputes the encoder layers during backward, after the
+                # decoder adapter was activated; switch back once backward reaches the encoder
+                hs.register_hook(self._activate_encoder)
             v = self.proj(hs[:, -self.cfg.n_mem :].float())
             outs.append(nn.functional.normalize(v, dim=-1) * self.out_scale)
         return torch.cat(outs)
