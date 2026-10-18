@@ -35,8 +35,6 @@ docs/report/templete.tex
 docs/slide/template.tex
 
 # LaTeX build outputs
-docs/report/main.pdf
-docs/slide/slides.pdf
 **/_render/
 *.aux
 *.log
