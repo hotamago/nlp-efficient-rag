@@ -1,1 +1,73 @@
-% TODO
+\section{Tái lập kết quả}
+\label{app:repro}
+
+Mọi số liệu trong báo cáo được sinh từ các tệp \texttt{results/} trong kho mã; bảng và hình được tạo
+lại bằng một lệnh. Các bước dưới đây chạy trên một GPU 12GB; mọi bộ nén cũng chạy được trên CPU
+(\texttt{EFFRAG\_DEVICE=cpu}).
+
+\begin{lstlisting}[language=bash]
+uv sync && cp .env.example .env                 # LLM_BASE_URL, LLM_MODEL
+uv run python scripts/download_data.py           # LITM NQ-Open 20 tai lieu
+# reader (vLLM, 4-bit AWQ)
+vllm serve Qwen/Qwen2.5-7B-Instruct-AWQ --served-model-name qwen2.5-7b-instruct \
+     --max-model-len 4096 --seed 0
+bash scripts/run_all_compression.sh --dry-run    # chi nen: recall, ti le nen
+bash scripts/run_all_compression.sh              # goi LLM (co cache theo hash prompt)
+uv run python scripts/run_retrieval.py           # Track B
+EFFRAG_DEVICE=cpu  uv run python scripts/bench_device.py --n 20
+EFFRAG_DEVICE=cuda uv run python scripts/bench_device.py --n 20
+uv run python scripts/eval_pisco.py --n 500      # PISCO (Mistral-7B nf4)
+uv run python scripts/build_soft_train.py        # du lieu huan luyen nen mem
+uv run python scripts/train_soft.py --out data/soft/run1
+uv run python scripts/eval_soft.py litm --run data/soft/run1
+uv run python scripts/make_figures.py            # bang + hinh cho bao cao/slide
+uv run python scripts/error_analysis.py
+uv run python app/demo.py                        # demo Gradio
+\end{lstlisting}
+
+\section{Prompt}
+\label{app:prompt}
+
+Mọi bộ nén dùng chung prompt gốc của \citet{liu2024lost}; mỗi tài liệu được hiển thị dưới dạng
+\texttt{Document [i](Title: ...) <văn bản>} và đưa vào lượt \texttt{user} của chat template:
+
+\begin{lstlisting}
+Write a high-quality answer for the given question using only the provided
+search results (some of which might be irrelevant).
+
+Document [1](Title: ...) ...
+...
+Document [20](Title: ...) ...
+
+Question: {question}
+Answer:
+\end{lstlisting}
+
+Closed-book dùng \texttt{Question: \{question\}\textbackslash nAnswer:}. PISCO dùng prompt riêng của
+mô hình (chỉ dẫn hệ thống gộp vào lượt \texttt{user} vì Mistral không có vai trò \texttt{system});
+hàng ``văn bản'' của PISCO dùng đúng prompt đó với tài liệu dạng văn bản để so sánh cùng điều kiện.
+
+\section{Siêu tham số mô hình nén mềm}
+\label{app:soft-hparams}
+
+\begin{table}[h]
+\centering
+\caption{Siêu tham số huấn luyện bộ nén mềm encode-once của nhóm.}
+\label{tab:soft-hparams}
+\small
+\begin{tabular}{l l}
+\toprule
+Tham số & Giá trị \\
+\midrule
+Mô hình nền & \nolinkurl{Qwen/Qwen2.5-1.5B-Instruct} (bf16) \\
+Adapter & 2 LoRA (encoder, decoder), $r=16$, $\alpha=32$, dropout 0,05, mọi lớp tuyến tính \\
+Vector nhớ / tài liệu & 8 (tài liệu cắt ở 128 token, tức nén 16$\times$) \\
+Chiếu encoder $\to$ decoder & tuyến tính khởi tạo đơn vị, chuẩn hoá L2, nhân hệ số học được \\
+Dữ liệu & 15.000 câu NQ (Tevatron), $k\in\{5,10,20\}$ đoạn, âm tính khó BM25 \\
+Chế độ lai & 50\% mẫu giữ 1 đoạn dạng văn bản (đoạn vàng với xác suất 0,6) \\
+Tối ưu & AdamW, lr $10^{-4}$, warmup 50 bước, cosine, clip 1,0 \\
+Batch & 8 mẫu/bước (tích luỹ gradient), 1 epoch $\approx$ 1.875 bước \\
+Bộ nhớ & gradient checkpointing; $\approx$5GB VRAM \\
+\bottomrule
+\end{tabular}
+\end{table}
