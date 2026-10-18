@@ -1,1 +1,7 @@
 {"device": "cuda", "threads": 10, "method": "bm25_topk", "params": "{\"k\": 5}", "n": 20, "mean_ms": 2.3381060502288165, "median_ms": 2.279437001561746}
+{"device": "cuda", "threads": 10, "method": "dense_topk", "params": "{\"k\": 5}", "n": 20, "mean_ms": 27.96433219955361, "median_ms": 26.298220498574665}
+{"device": "cuda", "threads": 10, "method": "rerank_topk", "params": "{\"k\": 5}", "n": 20, "mean_ms": 16.103860099610756, "median_ms": 15.825209997274214}
+{"device": "cuda", "threads": 10, "method": "provence", "params": "{\"model\": \"hotchpotch/open-provence-reranker-v1-gte-modernbert-base\", \"threshold\": 0.1}", "n": 20, "mean_ms": 78.80733715101087, "median_ms": 76.89675150322728}
+{"device": "cuda", "threads": 10, "method": "provence", "params": "{\"threshold\": 0.1}", "n": 20, "mean_ms": 203.85567429984803, "median_ms": 199.73319450218696}
+{"device": "cuda", "threads": 10, "method": "llmlingua2", "params": "{\"rate\": 0.5}", "n": 20, "mean_ms": 456.6572395993717, "median_ms": 455.3085290026502}
+{"device": "cuda", "threads": 10, "method": "longllmlingua", "params": "{\"target_token\": 730}", "n": 20, "mean_ms": 624.0442751000955, "median_ms": 624.6824644986191}
