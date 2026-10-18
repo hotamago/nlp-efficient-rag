@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.venv
+.ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+
+# Secrets
+.env
+
+# Data, caches, model weights, large outputs (re-creatable, never commit)
+data/
+models/
+*.safetensors
+*.bin
+*.gguf
+*.pkl
+.gradio/
+
+# Course material kept locally only (lecturer PDF, student IDs)
+docs/org/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
