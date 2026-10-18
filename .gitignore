@@ -29,3 +29,7 @@ docs/org/
 .vscode/
 .idea/
 .DS_Store
+
+# LaTeX templates from another course (contain other students' names/IDs)
+docs/report/templete.tex
+docs/slide/template.tex

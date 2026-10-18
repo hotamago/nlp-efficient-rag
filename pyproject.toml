@@ -23,6 +23,8 @@ dependencies = [
     "tqdm",
     "python-dotenv>=1.0",
     "nltk>=3.8",
+    "peft>=0.21.2",
+    "bitsandbytes>=0.50.2",
 ]
 
 [dependency-groups]
