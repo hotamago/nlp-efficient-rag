@@ -187,7 +187,19 @@ Cấu hình & @1 & @10 & @20 & TB & Token & Nén \\
 \end{tabular}
 \end{table}
 
-% TODO(T09): text for PISCO (T12) + own encode-once model (T16-T18)
+\paragraph{PISCO.} Bảng~\ref{tab:soft} so sánh PISCO với chính reader nền của nó (Mistral-7B-Instruct-v0.2,
+lượng tử 4-bit nf4) đọc 20 đoạn dạng văn bản, cùng prompt. PISCO thay 2.875 token văn bản bằng 160
+vector nhớ (8 vector/đoạn, nén 18$\times$ theo bộ đếm token chung) và vẫn đạt 48,2\% accuracy trung
+bình. Tuy vậy, so với văn bản đầy đủ trên cùng reader (60,3\%), PISCO giảm 8,8 / 10,4 / 17,2 điểm ở vị trí 1 / 10 / 20, cả ba đều có
+ý nghĩa thống kê (khoảng tin cậy bootstrap 95\% lần lượt $[-13,6;\,-4,0]$, $[-14,8;\,-6,0]$,
+$[-22,0;\,-12,6]$). Mức giảm lớn nhất khi đoạn vàng nằm cuối: đường cong vị trí của PISCO có dạng chữ
+U ngược (52,8 ở giữa, 44,0 ở cuối), trong khi văn bản dao động ít hơn (56,6--63,2). Như vậy, trên bài toán 20 đoạn với
+19 đoạn nhiễu, nén mềm nén mạnh hơn mọi phương pháp văn bản trong Bảng~\ref{tab:main} nhưng chưa
+đạt mức suy giảm nhỏ mà bài báo gốc báo cáo trên các bộ QA với ít đoạn hơn~\citep{louis2025pisco}.
+Lưu ý thêm: Mistral-7B nf4 đọc văn bản kém Qwen2.5-7B (60,3 so với 65,3), nên chênh lệch được tính trên
+cùng reader chứ không so sánh chéo.
+
+% TODO(T09): own encode-once model (T16-T18)
 
 %------------------------------------------------------------------------------
 \subsection{Truy hồi hiệu quả}
