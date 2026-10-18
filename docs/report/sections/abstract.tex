@@ -1,1 +1,24 @@
-% TODO
+\section*{Tóm tắt}
+\addcontentsline{toc}{section}{Tóm tắt}
+
+Hệ thống RAG đưa hàng chục đoạn văn vào LLM cho mỗi câu hỏi, khiến chi phí và độ trễ tăng theo số
+token, trong khi nhiều đoạn chỉ là nhiễu. Báo cáo này đánh giá có hệ thống hai hướng giảm chi phí đó:
+\emph{nén ngữ cảnh} (cắt bớt, chọn tài liệu, chọn câu, xoá token, nén mềm thành vector) và \emph{truy
+hồi hiệu quả} (BM25S, embedding tĩnh, Matryoshka, lượng tử int8/nhị phân, HNSW). Mọi phương pháp được
+đo trên cùng giao thức NQ-Open 20 tài liệu của \emph{Lost in the Middle} (500 câu hỏi, đoạn chứa đáp
+án ở vị trí 1, 10, 20), cùng một reader Qwen2.5-7B-Instruct, cùng bộ đếm token, kèm kiểm định bootstrap
+ghép cặp.
+
+Ở mức nén $\approx$4$\times$, chọn lọc theo câu bằng Provence giữ 91,6\% bằng chứng và đạt 64,0\%
+accuracy so với 65,3\% của ngữ cảnh đầy đủ (giảm 78\% token, không có ý nghĩa thống kê), trong khi xoá
+theo token (LLMLingua-2) làm accuracy rơi về mức không có ngữ cảnh. Khác với kết quả công bố trên
+GPT-3.5-Turbo, reader hiện đại gần như không còn hiện tượng \emph{lost in the middle} ở 3K token (chênh
+5,8 so với 21,6 điểm), nên nén không còn ``làm phẳng'' đường cong vị trí. Về truy hồi, một retriever
+dày đặc 33M tham số vượt BM25 21 điểm hit@5 và lượng tử int8 giảm chỉ mục 4$\times$ không mất chất
+lượng. Toàn bộ pipeline chạy được không cần GPU: bộ nén trên CPU (0,2--4,9 s/câu) và reader qua API.
+% TODO(T18): one sentence on PISCO / own encode-once soft compressor
+Mã nguồn, kết quả từng câu và demo Gradio được công khai.
+
+\vspace{0.6em}
+\noindent\textbf{Từ khoá:} RAG, nén ngữ cảnh, prompt compression, truy hồi hiệu quả, lost in the
+middle, Provence, LLMLingua.
