@@ -176,7 +176,13 @@ def main() -> None:
             positions = [0]
         for pos in positions:
             bs = args.bs if mode == "pisco" else args.bs_text
-            rows = run(model, mode, variant, pos, args.n, bs, reranker, run_id)
+            try:  # PISCO's generate_from_text does not disable autograd itself
+                with torch.inference_mode():
+                    rows = run(model, mode, variant, pos, args.n, bs, reranker, run_id)
+            except torch.OutOfMemoryError as e:  # skip this config, keep the loaded model
+                print(f"OOM in {cfg}@{pos}: {e}", flush=True)
+                torch.cuda.empty_cache()
+                continue
             record_run(rows, run_id=run_id, method=method, params=params, gold_pos=pos,
                        llm_model=llm, seed=SEED, track=args.track)  # fmt: skip
 
