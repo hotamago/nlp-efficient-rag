@@ -423,6 +423,16 @@ def fig_pipeline() -> None:
     save(fig, "pipeline")
 
 
+def copy_tables_to_slides() -> None:
+    """Slides are a separate Overleaf project, so they get their own copy of the tables."""
+    import shutil
+
+    dst = ROOT / "docs" / "slide" / "tables"
+    dst.mkdir(parents=True, exist_ok=True)
+    for f in TAB.glob("*.tex"):
+        shutil.copy(f, dst / f.name)
+
+
 def main() -> None:
     fig_pipeline()
     t_rec = recall_table()
@@ -454,3 +464,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+    copy_tables_to_slides()

@@ -68,6 +68,7 @@
 \newcolumntype{R}{>{\raggedleft\arraybackslash}X}
 \newcommand{\best}[1]{\textbf{\color{hustred}#1}}
 \newcommand{\todo}[1]{\textcolor{red}{\textbf{[#1]}}}
+\makeatletter\newcommand{\inputtable}[1]{\@@input #1 }\makeatother
 \newcommand{\takeaway}[1]{{\footnotesize\itshape\color{hustdark}\textbf{Ý chính.} #1\par}}
 
 \title{Efficient RAG: Nén ngữ cảnh và truy hồi hiệu quả}
@@ -223,7 +224,7 @@
 
 %================================================================ 6 — METHODS
 \begin{frame}{Các phương pháp nén cứng được so sánh}
-  {\scriptsize
+  \begingroup\scriptsize
   \renewcommand{\arraystretch}{1.15}
   \begin{tabularx}{\textwidth}{@{}l l X l@{}}
   \toprule
@@ -241,7 +242,7 @@
   Vector   & PISCO           & mỗi đoạn $\to$ 8 vector bộ nhớ (16$\times$), Mistral-7B & arXiv 2501.16075 \\
            & \textbf{Nén mềm encode-once} & \textbf{đề xuất của nhóm} (slide sau) & -- \\
   \bottomrule
-  \end{tabularx}}
+  \end{tabularx}\endgroup
   \vfill
   \takeaway{Tỉ lệ mục tiêu 2$\times$ ($\approx$1.450 token) và 4$\times$ ($\approx$730 token) như
   bảng của LongLLMLingua; phương pháp dùng ngưỡng (Provence) báo cáo tỉ lệ thực tế.}
@@ -350,14 +351,17 @@
       \IfFileExists{figures/tradeoff.png}{\includegraphics[width=\textwidth]{tradeoff.png}}{\todo{tradeoff.png}}
     \end{column}
     \begin{column}{0.38\textwidth}
-      \small
-      \begin{itemize}\setlength\itemsep{0.4em}
+      \footnotesize
+      \begin{itemize}\setlength\itemsep{0.25em}
         \item Full 20 đoạn: \textbf{65,3}\% (TB 3 vị trí); closed-book 38,8; oracle 92,6.
-        \item \todo{bộ nén tốt nhất ở 4$\times$ và mức chênh so với full}
-        \item \todo{bộ nén tốt nhất ở 2$\times$}
+        \item \textbf{Provence $\tau$=0,1}: 621 token (4,6$\times$), \best{64,0}\% -- không giảm có ý
+          nghĩa ở vị trí nào (bootstrap 95\%).
+        \item Rerank top-5 (4,1$\times$): 62,7\%; giảm $-6{,}0$ điểm ở vị trí 20.
+        \item \textbf{LLMLingua-2} $r$=0,25: 38,3\% $\approx$ closed-book, dù recall còn 68\%.
       \end{itemize}
       \vfill
-      \takeaway{\todo{chốt sau khi có số}}
+      \takeaway{Nén mức \emph{câu} theo câu hỏi: 4,6$\times$ ít token, gần như không mất độ chính xác.
+      Nén mức \emph{token} làm hỏng văn bản đối với reader 7B.}
     \end{column}
   \end{columns}
 \end{frame}
@@ -370,22 +374,46 @@
       \IfFileExists{figures/position_curve.png}{\includegraphics[width=\textwidth]{position_curve.png}}{\todo{position\_curve.png}}
     \end{column}
     \begin{column}{0.38\textwidth}
-      \small
+      \footnotesize
       \begin{itemize}\setlength\itemsep{0.4em}
-        \item Full: 65,6 / 62,2 / 68,0 -- chữ U nông hơn nhiều so với GPT-3.5
-          (75,7 / 54,1 / 63,1).
-        \item \todo{nén có làm phẳng đường cong?}
+        \item Full: 65,6 / 62,2 / 68,0 -- gần như \textbf{phẳng} (chênh 5,8 điểm) so với chữ U của
+          GPT-3.5: 75,7 / 54,1 / 63,1 (chênh 21,6).
+        \item Provence: 63,8 / 62,6 / 65,6 -- song song với Full: không còn nhiều để ``làm phẳng''.
+        \item Truncate: 74,0 ở vị trí 1 (\textbf{+8,4}, bớt nhiễu) nhưng 19,6 ở vị trí 10/20.
       \end{itemize}
+      \vfill
+      \takeaway{Reader hiện đại (ngữ cảnh 32K+) hầu như không còn ``lost in the middle'' ở 3K token.}
     \end{column}
   \end{columns}
 \end{frame}
 
 %================================================================ 11 — PUBLISHED
 \begin{frame}{Kết quả 4: so với số liệu đã công bố (GPT-3.5-Turbo)}
-  \todo{bảng chênh lệch so với baseline của chính mình: ours vs published}
+  \begingroup\scriptsize
+  \renewcommand{\arraystretch}{1.12}
+  \setlength{\tabcolsep}{3.5pt}
+  \begin{tabularx}{\textwidth}{@{}X r r r X r r r@{}}
+  \toprule
+  \multicolumn{4}{@{}l}{\textbf{\color{hustred}GPT-3.5-Turbo (công bố)}} &
+  \multicolumn{4}{l@{}}{\textbf{\color{hustred}Qwen2.5-7B-AWQ (nhóm)}} \\
+  & @1 & @10 & @20 & & @1 & @10 & @20 \\
+  \midrule
+  \inputtable{tables/published.tex}
+  \bottomrule
+  \end{tabularx}\endgroup\par\vspace{0.3em}
+  {\tiny Hàng đầu: accuracy tuyệt đối của ngữ cảnh đầy đủ; các hàng sau: chênh lệch (điểm) so với ngữ
+  cảnh đầy đủ của chính hệ đó. LongLLMLingua: so cặp 193 câu.}
   \vfill
-  \takeaway{So sánh \emph{độ chênh so với baseline} và \emph{hình dạng đường cong}, không so số
-  tuyệt đối (khác LLM).}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \scriptsize\textbf{\color{goodgreen}Tái lập được}: BM25 $\ll$ Dense; LLMLingua-2 đơn lẻ ở 4$\times$
+      sụt nặng ($-$21 đến $-$30 điểm, công bố $-$11 đến $-$27).
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \scriptsize\textbf{\color{hustred}Không tái lập}: ``nén làm \emph{tăng} accuracy ở giữa''
+      (LongLLMLingua $+17{,}1$ $\to$ $+1{,}0$ n.s.) -- vì reader mới không còn lost in the middle.
+    \end{column}
+  \end{columns}
 \end{frame}
 
 %================================================================ 12 — SOFT RESULTS
