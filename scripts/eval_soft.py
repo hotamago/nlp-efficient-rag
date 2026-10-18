@@ -104,10 +104,11 @@ def main() -> None:
     args = ap.parse_args()
     limit_gpu_memory()
     model = SoftRAG.load(args.run).eval()
-    if args.mode == "gate":
-        gate(model, args.run, args.n or 200)
-    else:
-        litm(model, args.run, args.variants, args.positions, args.n or 500)
+    with torch.inference_mode():
+        if args.mode == "gate":
+            gate(model, args.run, args.n or 200)
+        else:
+            litm(model, args.run, args.variants, args.positions, args.n or 500)
 
 
 if __name__ == "__main__":
