@@ -14,7 +14,7 @@ import time
 
 import torch
 
-from effrag.config import DATA_DIR, SEED
+from effrag.config import DATA_DIR, SEED, limit_gpu_memory
 from effrag.soft.model import SoftConfig, SoftRAG
 
 
@@ -37,6 +37,7 @@ def main() -> None:
     rng.shuffle(data)
     steps = args.steps or len(data) // args.accum
 
+    limit_gpu_memory()
     model = SoftRAG(SoftConfig(n_mem=args.n_mem))
     model.lm.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
     model.lm.config.use_cache = False

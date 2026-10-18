@@ -23,7 +23,7 @@ from huggingface_hub import snapshot_download
 from tqdm import tqdm
 
 from effrag.compression.base import render_docs
-from effrag.config import DATA_DIR, SEED
+from effrag.config import DATA_DIR, SEED, limit_gpu_memory
 from effrag.data import Doc, Example, load_litm_nq
 from effrag.metrics import best_subspan_em, exact_match, f1
 from effrag.results import new_run_id, record_run
@@ -126,6 +126,8 @@ def run(model, mode: str, variant: str, pos: int, n: int, bs: int, reranker, run
             ]  # noqa: E501
             preds = generate_text(model, prompts, max_new_tokens=64)
         dt = (time.perf_counter() - t0) / len(exs)
+        if b == 0:
+            print(f"peak VRAM {torch.cuda.max_memory_allocated() / 2**30:.2f} GiB", flush=True)
         for ex, s, pred in zip(exs, sel, preds, strict=True):
             kept = render_docs(s)
             if mode == "pisco":  # recall over what the encoder actually sees (<=128 tokens/doc)
@@ -146,27 +148,32 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=500)
     ap.add_argument("--positions", type=int, nargs="+", default=[0, 9, 19])
-    ap.add_argument("--bs", type=int, default=8, help="batch size for PISCO (compressed) configs")
-    ap.add_argument("--bs-text", type=int, default=4, help="batch size for full-text configs")
+    ap.add_argument("--bs", type=int, default=1, help="batch size for PISCO (compressed) configs")
+    ap.add_argument("--bs-text", type=int, default=1, help="batch size for full-text configs")
     ap.add_argument("--track", default="compression", help="e.g. compression_smoke for tests")
     ap.add_argument(
         "--configs", nargs="+",
-        default=["pisco:all", "pisco:rerank5", "text:full", "text:rerank5", "text:closedbook",
-                 "text:oracle"],
+        default=["pisco:all", "text:full", "text:closedbook", "text:oracle", "pisco:rerank5@9",
+                 "text:rerank5@9"],
+        help="mode:variant[@pos,...]; @ overrides --positions for that config",
     )  # fmt: skip
     args = ap.parse_args()
 
     from sentence_transformers import CrossEncoder
 
+    limit_gpu_memory()
     reranker = CrossEncoder(RERANKER, device="cuda")
     model = load_pisco()
     for cfg in args.configs:
+        cfg, _, at = cfg.partition("@")
         mode, variant = cfg.split(":")
         method = "pisco" if mode == "pisco" else "mistral_text"
         llm = "mistral-7b-nf4+pisco" if mode == "pisco" else "mistral-7b-nf4"
         params = {"docs": variant} | ({"rerank": RERANKER} if variant.startswith("rerank") else {})
         run_id = new_run_id(f"{method}_{variant}")
-        positions = [0] if variant in ("closedbook", "oracle") else args.positions
+        positions = [int(x) for x in at.split(",")] if at else args.positions
+        if variant in ("closedbook", "oracle"):
+            positions = [0]
         for pos in positions:
             bs = args.bs if mode == "pisco" else args.bs_text
             rows = run(model, mode, variant, pos, args.n, bs, reranker, run_id)

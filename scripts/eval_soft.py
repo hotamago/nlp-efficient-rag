@@ -20,7 +20,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-from effrag.config import DATA_DIR, SEED
+from effrag.config import DATA_DIR, SEED, limit_gpu_memory
 from effrag.data import load_litm_nq
 from effrag.metrics import best_subspan_em, exact_match, f1
 from effrag.results import new_run_id, record_run
@@ -102,6 +102,7 @@ def main() -> None:
     ap.add_argument("--variants", nargs="+", default=["soft", "hybrid"])
     ap.add_argument("--positions", type=int, nargs="+", default=[0, 9, 19])
     args = ap.parse_args()
+    limit_gpu_memory()
     model = SoftRAG.load(args.run).eval()
     if args.mode == "gate":
         gate(model, args.run, args.n or 200)

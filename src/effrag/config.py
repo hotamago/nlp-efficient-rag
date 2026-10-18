@@ -10,6 +10,7 @@ load_dotenv()
 
 # Keep the machine responsive: cap CPU threads used by torch / BLAS / tokenizers.
 _THREADS = os.getenv("EFFRAG_THREADS", "4")
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 for _var in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMBA_NUM_THREADS"):
     os.environ.setdefault(_var, _THREADS)
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
@@ -38,3 +39,12 @@ def device() -> str:
     import torch
 
     return "cuda" if torch.cuda.is_available() else "cpu"
+
+
+def limit_gpu_memory() -> None:
+    """Cap this process at EFFRAG_GPU_FRACTION (default 0.7) of VRAM so it fails with OOM instead
+    of spilling into shared system RAM under WSL (the GPU also drives the display)."""
+    import torch
+
+    if torch.cuda.is_available():
+        torch.cuda.set_per_process_memory_fraction(float(os.getenv("EFFRAG_GPU_FRACTION", "0.7")))
