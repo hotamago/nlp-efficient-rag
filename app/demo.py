@@ -173,7 +173,10 @@ with gr.Blocks(title="Efficient RAG demo") as demo:
         details = gr.HTML()
         btn.click(compare, [idx, pos, labels], [info, summary, details])
     with gr.Tab("RAG end-to-end"):
-        q = gr.Textbox(label="Câu hỏi (tiếng Anh)", value="who wrote the song hotel california")
+        q = gr.Textbox(
+            label="Câu hỏi (tiếng Anh)",
+            value="when was the nobel prize for literature first awarded",
+        )
         with gr.Row():
             kind = gr.Radio(["BM25S", "Dense (bge-small)"], value="BM25S", label="Retriever")
             k = gr.Slider(5, 20, value=10, step=1, label="Top-k")
