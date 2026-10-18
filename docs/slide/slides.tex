@@ -451,9 +451,31 @@
 
 %================================================================ 14 — CPU
 \begin{frame}{Kết quả 7: không có GPU thì sao?}
-  \todo{bảng độ trễ CPU vs GPU (ms/câu) từ results/latency}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begingroup\scriptsize
+      \renewcommand{\arraystretch}{1.1}
+      \begin{tabularx}{\linewidth}{@{}X r r r@{}}
+      \toprule
+      Bộ nén & GPU & CPU & $\times$ \\
+      \midrule
+      \inputtable{tables/latency.tex}
+      \bottomrule
+      \end{tabularx}\endgroup\par\vspace{0.2em}
+      {\tiny Trung vị ms/câu, 20 câu, không tính LLM. RTX 4070 SUPER vs i5-14600K 8 luồng.}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \footnotesize
+      \begin{itemize}\setlength\itemsep{0.3em}
+        \item \textbf{Mức tài liệu} $<$ 0,4 s trên CPU: dùng tương tác được.
+        \item \textbf{Mức câu} chậm 21--25$\times$: Provence 4,9 s, OpenProvence 1,6 s.
+        \item \textbf{Mức token} 13--15 s và accuracy kém hơn $\Rightarrow$ không nên dùng khi thiếu GPU.
+        \item Reader qua API: Provence giảm \textbf{78\%} token đầu vào, $-$1,3 điểm (n.s.).
+      \end{itemize}
+    \end{column}
+  \end{columns}
   \vfill
-  \takeaway{\todo{}}
+  \takeaway{Không có GPU vẫn chạy được: rerank top-5 (0,2 s) hoặc Provence (4,9 s) trên CPU + reader qua API.}
 \end{frame}
 
 %================================================================ 15 — DEMO
