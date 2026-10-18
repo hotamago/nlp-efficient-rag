@@ -17,6 +17,7 @@ SLIDE_FIG = ROOT / "docs" / "slide" / "figures"
 POS = [0, 9, 19]
 POS_LABEL = ["1", "10", "20"]
 POS_INVARIANT = {"closedbook", "oracle"}  # run at one position only
+POS_LABELS_INV = {"Closed-book", "Oracle"}
 
 # Reference palette (dataviz skill), light mode, fixed order
 C = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"]
@@ -30,6 +31,7 @@ mpl.rcParams.update({
     "legend.frameon": False, "savefig.bbox": "tight", "savefig.dpi": 200,
 })  # fmt: skip
 
+MAIN_LLM = "qwen2.5-7b-instruct"  # reader of the main table; other readers go to soft_table()
 OP = "hotchpotch/open-provence-reranker-v1-gte-modernbert-base"
 
 
@@ -49,6 +51,13 @@ def label(method: str, params: str) -> str:
         return f"{name} τ={p['threshold']}"
     if method == "chain":
         return "Rerank-10 → LLMLingua-2"
+    if method in ("pisco", "mistral_text"):
+        docs = {"all": "20 đoạn", "full": "20 đoạn", "rerank5": "rerank top-5"}.get(p["docs"])
+        if docs is None:
+            return {"closedbook": "Closed-book", "oracle": "Oracle"}[p["docs"]]
+        return f"PISCO 16× ({docs})" if method == "pisco" else f"Văn bản ({docs})"
+    if method == "soft":
+        return f"Nén mềm 8 vector ({'lai top-1' if p['variant'] == 'hybrid' else '20 đoạn'})"
     return {"full": "Full (20 docs)", "closedbook": "Closed-book", "oracle": "Oracle"}[method]
 
 
@@ -60,20 +69,25 @@ FAMILY = {
 }  # fmt: skip
 
 
-def load(track: str, n: int | None = 500) -> pd.DataFrame:
+def load(track: str, n: int | None = 500, llm: str | None = MAIN_LLM) -> pd.DataFrame:
     df = pd.read_csv(RESULTS_DIR / track / "summary.csv")
     if n is not None:
         df = df[df.n == n]
-    # keep the latest run per (method, params, gold_pos)
-    df = df.sort_values("date").drop_duplicates(["method", "params", "gold_pos"], keep="last")
+    if llm is not None and track == "compression":
+        df = df[df.llm_model == llm]
+    # keep the latest run per (reader, method, params, gold_pos)
+    key = ["llm_model", "method", "params", "gold_pos"]
+    df = df.sort_values("date").drop_duplicates(key, keep="last")
     df["label"] = [label(m, p) for m, p in zip(df.method, df.params, strict=True)]
     df["family"] = df.method.map(FAMILY)
     # position-invariant references are run once and shown at every position
     extra = [
-        df[(df.method == m)].assign(gold_pos=pos)
-        for m in POS_INVARIANT
+        df[(df.label == lab) & (df.llm_model == llm)].assign(gold_pos=pos)
+        for lab, llm in df[df.label.isin(POS_LABELS_INV)][["label", "llm_model"]]
+        .drop_duplicates()
+        .itertuples(index=False)
         for pos in POS
-        if not ((df.method == m) & (df.gold_pos == pos)).any() and (df.method == m).any()
+        if not ((df.label == lab) & (df.llm_model == llm) & (df.gold_pos == pos)).any()
     ]
     return pd.concat([df, *extra], ignore_index=True) if extra else df
 
@@ -203,7 +217,7 @@ def per_question(method_label: str, pos: int) -> pd.DataFrame | None:
         r0 = rows[0]
         run = r0["run_id"]
         summ = pd.read_csv(RESULTS_DIR / "compression" / "summary.csv")
-        s = summ[(summ.run_id == run) & (summ.gold_pos == pos)]
+        s = summ[(summ.run_id == run) & (summ.gold_pos == pos) & (summ.llm_model == MAIN_LLM)]
         if not s.empty and label(s.method.iloc[0], s.params.iloc[0]) == method_label:
             return pd.DataFrame(rows).set_index("qid")
     return None
@@ -232,6 +246,43 @@ def significance(labels: list[str], base: str = "Full (20 docs)") -> pd.DataFram
             out.append({"label": lab, "pos": pos + 1, "n": len(common),
                         "delta": m, "lo": lo, "hi": hi})  # fmt: skip
     return pd.DataFrame(out)
+
+
+SOFT_BLOCKS = [
+    ("Mistral-7B-Instruct-v0.2 (nf4)", ["mistral-7b-nf4", "mistral-7b-nf4+pisco"]),
+    ("Qwen2.5-1.5B-Instruct", ["qwen2.5-1.5b-instruct", "qwen2.5-1.5b-instruct+soft"]),
+]
+
+
+def soft_table() -> pd.DataFrame | None:
+    """Soft compression (PISCO, our encode-once model) next to text baselines of the same reader."""
+    df = load("compression", llm=None)
+    df = df[df.llm_model != MAIN_LLM]
+    if df.empty:
+        return None
+    lines, out = [], []
+    for title, llms in SOFT_BLOCKS:
+        sub = df[df.llm_model.isin(llms)]
+        if sub.empty:
+            continue
+        acc = sub.pivot_table(index="label", columns="gold_pos", values="accuracy") * 100
+        acc = acc.reindex(columns=POS)
+        g = sub.groupby("label")
+        soft = g.llm_model.first().str.contains("+", regex=False)
+        t = acc.assign(TB=acc.mean(axis=1, skipna=False), Token=g.comp_tokens.mean(),
+                       ratio=g.ratio.mean(), soft=soft)  # fmt: skip
+        t = t.sort_values(["soft", "Token"], ascending=[True, False])
+        lines.append(f"\\multicolumn{{7}}{{l}}{{\\textit{{{title}}}}} \\\\")
+        for name, r in t.iterrows():
+            accs = " & ".join(fmt(r[p]) for p in POS)
+            lines.append(f"\\quad {tex_name(name)} & {accs} & {fmt(r.TB)} & {r.Token:.0f} & "
+                         f"{r.ratio:.1f}$\\times$ \\\\")  # fmt: skip
+        lines.append("\\midrule")
+        out.append(t.assign(reader=title))
+    lines[-1] = "\\bottomrule"
+    TAB.mkdir(parents=True, exist_ok=True)
+    (TAB / "soft.tex").write_text("\n".join(lines) + "\n")
+    return pd.concat(out)
 
 
 def fig_position(df: pd.DataFrame) -> None:
@@ -370,6 +421,9 @@ def main() -> None:
     fig_position(df)
     fig_tradeoff(t)
     print(t.round(1).to_string())
+    soft = soft_table()
+    if soft is not None:
+        print(soft.round(1).to_string())
     sig = significance(["Rerank top-5", "Rerank top-10", "LLMLingua-2 r=0.25",
                         "Rerank-10 → LLMLingua-2", "Provence τ=0.1", "OpenProvence τ=0.1",
                         "Truncate 730"])  # fmt: skip
