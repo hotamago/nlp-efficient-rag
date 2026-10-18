@@ -93,9 +93,9 @@ adapter LoRA~\cite{hu2022lora} riêng:
 \begin{itemize}
   \item \textbf{Encoder} $E$ (adapter $\phi_E$): đọc đoạn $d_j$ (tối đa 128 token, gồm tiêu đề và
   nội dung), nối thêm $m=8$ vector nhớ học được $\mathbf{s}_1,\ldots,\mathbf{s}_m$. Trạng thái ẩn
-  cuối tại các vị trí nhớ được chiếu tuyến tính, chuẩn hoá L2 và nhân với hệ số học được, ra
-  $M_j = E(d_j) \in \mathbb{R}^{m\times h}$. Bước chuẩn hoá cần thiết vì trạng thái ẩn cuối của
-  Qwen2.5 lớn hơn embedding token khoảng 600 lần; không có bước này, loss ban đầu là 17 thay vì 4,3.
+  cuối tại các vị trí nhớ được bỏ đi $c=8$ kênh \emph{massive activation}, chiếu tuyến tính, chuẩn
+  hoá L2 và nhân với hệ số học được, ra $M_j = E(d_j) \in \mathbb{R}^{m\times h}$ (xem đoạn
+  ``Khởi tạo'' bên dưới).
   \item \textbf{Decoder} $D$ (adapter $\phi_D$): nhận \emph{đúng} prompt Lost-in-the-Middle (cùng
   chat template), trong đó phần nội dung của mỗi \texttt{Document [i](Title: \ldots)} được thay bằng
   $m$ vector $M_j$, rồi sinh câu trả lời.
@@ -104,6 +104,19 @@ Vì $E$ không nhìn câu hỏi, $M_j$ có thể \textbf{tính trước một l�
 lưu lại như một chỉ mục. Khi hỏi, decoder chỉ xử lý khoảng $20\times(m+\text{token tiêu đề})$
 vị trí thay vì 2.874 token: trung bình 416 vị trí ($m=8$, 500 câu), tức tỉ lệ nén ngữ cảnh
 6,9$\times$ nếu tính cả tiêu đề và 16,4$\times$ nếu chỉ tính phần nội dung.
+
+\paragraph{Khởi tạo.} Trạng thái ẩn cuối của Qwen2.5 lớn hơn embedding token hàng trăm lần và tập
+trung năng lượng vào vài kênh cố định (hiện tượng \emph{massive activation}): ở Qwen2.5-1.5B, kênh lớn
+nhất chiếm trung bình 26\% bình phương chuẩn của vector nhớ. Vì lớp đầu tiên của decoder chuẩn hoá
+RMS từng vị trí, chỉ \emph{hướng} của vector nhớ có ý nghĩa: chuẩn hoá L2 hay thu nhỏ vector đều không
+giúp gì. Đo trên 6 mẫu huấn luyện khi chưa huấn luyện, loss trên câu trả lời là 15,2 nat (tệ hơn đoán
+đều trên từ vựng, $\ln|V|\approx 11{,}9$; closed-book 5,6), tức các vector nhớ làm decoder ``lạc''
+hoàn toàn. Bỏ 8 kênh có biên độ trung bình lớn nhất (xác định một lần trên một câu hiệu chuẩn, lưu
+cùng adapter) đưa loss về 8,7, gần mức khi thay toàn bộ vector nhớ bằng 0 (7,5); quá trình huấn luyện
+khi đó chỉ cần dạy vector nhớ mang thông tin thay vì trước hết phải ``gỡ'' nhiễu. Ngoài ra, khi bật
+gradient checkpointing, encoder bị tính lại trong lúc lan truyền ngược sau khi adapter decoder đã được
+kích hoạt; chúng tôi chuyển lại adapter encoder bằng một hook trên trạng thái ẩn của encoder (không
+sửa, gradient encoder có cosine $-0{,}01$ so với tính không checkpoint).
 
 \paragraph{Biến thể lai (cứng + mềm).} Lấy cảm hứng từ việc DeepSeek-V4 kết hợp ``chọn top-$k$ mục
 để nhìn chi tiết'' với ``nhìn toàn bộ ở dạng nén''~\cite{deepseek2026v4}, biến thể \emph{hybrid} giữ
