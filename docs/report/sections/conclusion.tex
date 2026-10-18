@@ -1,1 +1,50 @@
-% TODO
+\section{Kết luận}
+\label{sec:conclusion}
+
+\subsection{Trả lời câu hỏi nghiên cứu}
+
+\begin{description}[leftmargin=2.6em,labelindent=0pt]
+  \item[RQ1.] Ở mức nén $\approx$4$\times$, \textbf{chọn lọc theo câu} (Provence $\tau=0{,}1$, 4,6$\times$)
+  là cách duy nhất không làm giảm accuracy có ý nghĩa thống kê ở cả ba vị trí (64,0\% so với 65,3\%
+  của ngữ cảnh đầy đủ). Chọn lọc theo tài liệu (rerank top-5) rẻ hơn nhiều nhưng mất 2,6 điểm và giảm
+  có ý nghĩa khi đoạn vàng ở cuối. Xoá theo token (LLMLingua-2 r=0,25) làm accuracy rơi về mức
+  closed-book (38,3\% so với 38,8\%): phân tích lỗi cho thấy phần lớn thiệt hại đến từ văn bản bị xé
+  vụn chứ không phải mất đáp án. Với reader hiện đại, đường cong vị trí vốn đã gần phẳng (chênh 5,8
+  điểm) nên nén không còn tác dụng ``làm phẳng'' như báo cáo cho GPT-3.5.
+  \item[RQ2.] Ở quy mô 50,7k đoạn, retriever dày đặc nhỏ (bge-small, 33M tham số) vượt BM25 21 điểm
+  hit@5; lượng tử int8 giảm chỉ mục 4$\times$ không mất chất lượng, nhị phân + rescore giảm 32$\times$
+  chỉ mất 2,8 điểm.
+  \item[RQ3.] Tái lập được hai kết luận của các công bố: BM25 kém xa dense, và LLMLingua-2 dùng đơn lẻ
+  ở 4$\times$ sụt mạnh ($-$21 đến $-$30 điểm so với $-$11 đến $-$27 được công bố). Không tái lập được
+  kết luận ``nén làm tăng accuracy khi đoạn vàng ở giữa'' của LongLLMLingua ($+17{,}1$ điểm với GPT-3.5,
+  $+1{,}0$ không có ý nghĩa với Qwen2.5-7B): hiệu ứng đó phụ thuộc vào reader bị \emph{lost in the
+  middle}, điều không còn đúng với LLM mở thế hệ mới ở độ dài 3K token.
+  \item[RQ4.] Có. Bộ nén chạy trên CPU (rerank 0,2 s/câu, Provence 4,9 s/câu), reader gọi qua API;
+  nén giảm 78\% token đầu vào và do đó giảm chi phí API tương ứng. GPU chỉ cần để rút ngắn độ trễ
+  nén.
+  \item[RQ5.] % TODO(T18): fill with PISCO / own soft model numbers
+\end{description}
+
+\subsection{Hạn chế}
+
+\begin{itemize}
+  \item Chỉ một bộ dữ liệu (NQ-Open, câu trả lời ngắn) và một reader chính; kết luận về nén mức token
+  có thể khác với tác vụ cần lập luận nhiều bước hoặc ngữ cảnh dài hơn nhiều (32K+).
+  \item Chỉ số \emph{best subspan EM} phạt các câu trả lời đúng nhưng khác định dạng (ví dụ ngày
+  tháng); một phần lỗi trong Mục~\ref{sec:res-errors} thuộc loại này.
+  \item LongLLMLingua chỉ chạy 200 câu ở một vị trí vì chi phí; các số liệu GPT-3.5 chỉ dùng để so
+  sánh độ chênh, không so sánh tuyệt đối.
+  \item Mô hình nén mềm của nhóm được huấn luyện 1 epoch trên 15k mẫu với một GPU 12GB, nhỏ hơn nhiều
+  so với PISCO (huấn luyện trên hàng trăm nghìn mẫu).
+\end{itemize}
+
+\subsection{Hướng phát triển}
+
+\begin{itemize}
+  \item Kết hợp hai nhánh hiệu quả nhất: chọn lọc theo câu (Provence) cho tài liệu được xếp hạng cao
+  và bộ nhớ nén cho phần còn lại -- tương tự cơ chế trộn token chọn lọc và token nén trong attention
+  thưa của DeepSeek.
+  \item Đánh giá trên ngữ cảnh dài hơn (50--100 tài liệu) và các bộ dữ liệu đa bước (HotpotQA,
+  MuSiQue), nơi reader còn bị ảnh hưởng bởi vị trí.
+  \item Chưng cất Provence sang mô hình nhỏ hơn để giảm độ trễ trên CPU xuống dưới 1 s/câu.
+\end{itemize}

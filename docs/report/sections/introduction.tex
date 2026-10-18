@@ -37,7 +37,7 @@ chất lượng (tỉ lệ top-$k$ chứa đáp án) và hiệu năng (kích th�
 
 \subsection{Câu hỏi nghiên cứu và đóng góp}
 
-Báo cáo trả lời ba câu hỏi:
+Báo cáo trả lời năm câu hỏi:
 \begin{description}
   \item[RQ1.] Các bộ nén ngữ cảnh từ thế hệ đầu (LLMLingua-2, LongLLMLingua, 2023--2024) đến thế hệ
   \emph{pruner} mới (Provence -- ICLR 2025, OpenProvence -- 2025) giảm được bao nhiêu token mà không
@@ -45,6 +45,9 @@ Báo cáo trả lời ba câu hỏi:
   \item[RQ2.] Các kỹ thuật truy hồi hiệu quả (BM25S, static embedding, Matryoshka, lượng tử hoá
   int8/binary, HNSW) đánh đổi chất lượng -- tốc độ -- bộ nhớ thế nào?
   \item[RQ3.] Kết quả của nhóm so với các công bố trên cùng bộ dữ liệu ra sao?
+  \item[RQ4.] Không có GPU thì pipeline nén + truy hồi có còn dùng được không?
+  \item[RQ5.] Nén mềm ``mã hoá một lần'' (mỗi tài liệu thành vài vector, tính trước offline) có thay
+  được văn bản khi đọc bằng LLM nhỏ không?
 \end{description}
 
 Đóng góp chính của nhóm:
@@ -56,6 +59,9 @@ Báo cáo trả lời ba câu hỏi:
   LongLLMLingua~\cite{jiang2024longllmlingua} và LLMLingua-2~\cite{pan2024llmlingua2} đã công bố kết
   quả theo từng vị trí. Theo khảo sát của nhóm, chưa có công bố nào đánh giá họ pruner Provence trên
   đúng giao thức này.
+  \item Đánh giá nén mềm trên cùng giao thức: PISCO~\cite{louis2025pisco} (Mistral-7B) và một bộ nén
+  encode-once do nhóm tự huấn luyện trên Qwen2.5-1.5B, có chế độ lai giữ đoạn quan trọng nhất ở dạng
+  văn bản.
   \item Phân tích đánh đổi độ chính xác -- token -- độ trễ và một demo tương tác (Gradio) minh hoạ
   trực quan phần ngữ cảnh mà mỗi phương pháp giữ lại.
 \end{itemize}
