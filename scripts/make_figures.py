@@ -31,6 +31,7 @@ mpl.rcParams.update({
     "legend.frameon": False, "savefig.bbox": "tight", "savefig.dpi": 200,
 })  # fmt: skip
 
+BASE = "Full (20 docs)"
 MAIN_LLM = "qwen2.5-7b-instruct"  # reader of the main table; other readers go to soft_table()
 OP = "hotchpotch/open-provence-reranker-v1-gte-modernbert-base"
 
@@ -139,12 +140,13 @@ def write_latex(t: pd.DataFrame) -> None:
         lines.append(f"\\multicolumn{{9}}{{l}}{{\\textit{{{fam}}}}} \\\\")
         for name, r in sub.iterrows():
             accs = " & ".join(fmt(v) for v in r[POS_LABEL])
+            ratio = "--" if r.Token < 1 else f"{r['Nén']:.1f}$\\times$"
             tb = fmt(r.TB)
             if fam != "Tham chiếu" and abs(r.TB - best_tb) < 1e-9:
                 tb = f"\\best{{{tb}}}"
             lines.append(
                 f"\\quad {tex_name(name)} & {accs} & {tb} & {r.Token:.0f} & "
-                f"{r['Nén']:.1f}$\\times$ & {r.Recall:.1f} & {fmt(r.ms, 0)} \\\\"
+                f"{ratio} & {r.Recall:.1f} & {fmt(r.ms, 0)} \\\\"
             )
         lines.append("\\midrule")
     lines[-1] = "\\bottomrule"
@@ -187,30 +189,39 @@ PUBLISHED = [
 ]
 
 
-def published_table(df: pd.DataFrame, df200: pd.DataFrame) -> None:
+def published_table(df: pd.DataFrame) -> pd.DataFrame:
+    """Accuracy change vs. each side's own uncompressed baseline (published GPT-3.5 vs. ours).
+
+    Configs run on a different sample (LongLLMLingua, n=200) are compared on the questions they
+    share with the full-context run (paired), not against the n=500 mean.
+    """
     ours = pivot(df, "accuracy") * 100
-    ours200 = pivot(df200, "accuracy") * 100 if not df200.empty else pd.DataFrame()
-    lines = []
+    base_pub = PUBLISHED[0][2]
+    lines, out = [], []
     for key, pub_name, pub in PUBLISHED:
-        row = (
-            ours.loc[key]
-            if key in ours.index
-            else ours200.loc[key]
-            if key in ours200.index
-            else None
-        )
-        vals = [fmt(row[p]) if row is not None else "--" for p in POS]
-        lines.append(
-            f"{pub_name} & "
-            + " & ".join(f"{v:.1f}" for v in pub)
-            + f" & {tex_name(key)} & "
-            + " & ".join(vals)
-            + " \\\\"
-        )
+        if key == BASE:
+            row = [ours.loc[key, p] for p in POS]
+            pub_s = " & ".join(f"{v:.1f}" for v in pub)
+            our_s = " & ".join(fmt(v) for v in row)
+        else:
+            row = []
+            for p in POS:
+                ref, q = per_question(BASE, p), per_question(key, p, n=None)
+                if ref is None or q is None:
+                    row.append(float("nan"))
+                    continue
+                common = ref.index.intersection(q.index)
+                row.append(100 * (q.loc[common, "accuracy"].mean()
+                                  - ref.loc[common, "accuracy"].mean()))  # fmt: skip
+            pub_s = " & ".join(f"{v - b:+.1f}" for v, b in zip(pub, base_pub, strict=True))
+            our_s = " & ".join("--" if pd.isna(v) else f"{v:+.1f}" for v in row)
+        lines.append(f"{pub_name} & {pub_s} & {tex_name(key)} & {our_s} \\\\")
+        out.append({"published": pub_name, "ours": key, **dict(zip(POS_LABEL, row, strict=True))})
     (TAB / "published.tex").write_text("\n".join(lines) + "\n")
+    return pd.DataFrame(out)
 
 
-def per_question(method_label: str, pos: int) -> pd.DataFrame | None:
+def per_question(method_label: str, pos: int, n: int | None = 500) -> pd.DataFrame | None:
     """Per-question rows of the latest LLM run for a config label at a gold position."""
     for path in sorted((RESULTS_DIR / "compression").glob(f"*_gold{pos}.jsonl"), reverse=True):
         rows = [json.loads(x) for x in path.open()]
@@ -218,6 +229,8 @@ def per_question(method_label: str, pos: int) -> pd.DataFrame | None:
         run = r0["run_id"]
         summ = pd.read_csv(RESULTS_DIR / "compression" / "summary.csv")
         s = summ[(summ.run_id == run) & (summ.gold_pos == pos) & (summ.llm_model == MAIN_LLM)]
+        if n is not None:
+            s = s[s.n == n]
         if not s.empty and label(s.method.iloc[0], s.params.iloc[0]) == method_label:
             return pd.DataFrame(rows).set_index("qid")
     return None
@@ -233,7 +246,7 @@ def paired_bootstrap(a: pd.Series, b: pd.Series, iters: int = 10000, seed: int =
     return 100 * d.mean(), 100 * np.percentile(boots, 2.5), 100 * np.percentile(boots, 97.5)
 
 
-def significance(labels: list[str], base: str = "Full (20 docs)") -> pd.DataFrame:
+def significance(labels: list[str], base: str = BASE) -> pd.DataFrame:
     out = []
     for pos in POS:
         ref = per_question(base, pos)
@@ -287,9 +300,13 @@ def soft_table() -> pd.DataFrame | None:
 
 def fig_position(df: pd.DataFrame) -> None:
     acc = pivot(df, "accuracy") * 100
-    series = ["Full (20 docs)", "Truncate 730", "Rerank top-5", "LLMLingua-2 r=0.25",
-              "Rerank-10 → LLMLingua-2", "Provence τ=0.1"]  # fmt: skip
+    series = ["Full (20 docs)", "Provence τ=0.1", "Rerank top-5", "LLMLingua-2 r=0.25",
+              "Rerank-10 → LLMLingua-2"]  # fmt: skip
     series = [s for s in series if s in acc.index]
+    if "Truncate 730" in acc.index:
+        ax_trunc = acc.loc["Truncate 730"]
+    else:
+        ax_trunc = None
     fig, ax = plt.subplots(figsize=(6.2, 3.4))
     for ref, ls in (("Oracle", ":"), ("Closed-book", "--")):
         if ref in acc.index:
@@ -298,6 +315,9 @@ def fig_position(df: pd.DataFrame) -> None:
             ax.text(2.06, y, f"{ref} {y:.1f}", va="center", fontsize=8, color=INK2)
     for i, s in enumerate(series):
         ax.plot(range(len(POS)), acc.loc[s], color=C[i], marker="o", ms=4, label=s)
+    if ax_trunc is not None:
+        ax.plot(range(len(POS)), ax_trunc, color=GRAY, ls="--", marker="s", ms=4, lw=1.4,
+                label="Truncate 730")  # fmt: skip
     ax.set_xticks(range(len(POS)), POS_LABEL)
     ax.set_xlabel("Vị trí đoạn chứa đáp án (trên 20 đoạn)")
     ax.set_ylabel("Accuracy (%)")
@@ -318,9 +338,10 @@ def fig_tradeoff(t: pd.DataFrame) -> None:
     if "Full (20 docs)" in t.index:
         r = t.loc["Full (20 docs)"]
         ax.scatter(r.Token, r.TB, s=70, color=INK, marker="*", label="Full", zorder=3)
+    nudge = {"OpenProvence τ=0.1": (4, -9), "Truncate 730": (4, -9), "Rerank top-10": (-30, 6)}
     for name, r in t[t.family != "Tham chiếu"].iterrows():
         ax.annotate(name, (r.Token, r.TB), fontsize=6.5, color=INK2,
-                    xytext=(4, 2), textcoords="offset points")  # fmt: skip
+                    xytext=nudge.get(name, (4, 2)), textcoords="offset points")  # fmt: skip
     ax.set_xscale("log")
     ax.set_xlabel("Số token ngữ cảnh trung bình (log)")
     ax.set_ylabel("Accuracy trung bình 3 vị trí (%)")
@@ -413,11 +434,10 @@ def main() -> None:
     if not (RESULTS_DIR / "compression" / "summary.csv").exists():
         return
     df = load("compression")
-    df200 = load("compression", n=200)
     t = main_table(df)
     t.round(2).to_csv(RESULTS_DIR / "compression" / "main_table.csv")
     write_latex(t)
-    published_table(df, df200)
+    print(published_table(df).round(1).to_string())
     fig_position(df)
     fig_tradeoff(t)
     print(t.round(1).to_string())
