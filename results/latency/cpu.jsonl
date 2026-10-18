@@ -1,0 +1,7 @@
+{"device": "cpu", "threads": 8, "method": "bm25_topk", "params": "{\"k\": 5}", "n": 20, "mean_ms": 2.2112770995590836, "median_ms": 2.156203001504764}
+{"device": "cpu", "threads": 8, "method": "dense_topk", "params": "{\"k\": 5}", "n": 20, "mean_ms": 368.1687939504627, "median_ms": 361.1398110042501}
+{"device": "cpu", "threads": 8, "method": "rerank_topk", "params": "{\"k\": 5}", "n": 20, "mean_ms": 201.67087340014405, "median_ms": 196.25322000138112}
+{"device": "cpu", "threads": 8, "method": "provence", "params": "{\"model\": \"hotchpotch/open-provence-reranker-v1-gte-modernbert-base\", \"threshold\": 0.1}", "n": 20, "mean_ms": 1811.6600584999105, "median_ms": 1654.9785404968134}
+{"device": "cpu", "threads": 8, "method": "provence", "params": "{\"threshold\": 0.1}", "n": 20, "mean_ms": 5200.4692354003055, "median_ms": 4961.393848498119}
+{"device": "cpu", "threads": 8, "method": "llmlingua2", "params": "{\"rate\": 0.5}", "n": 20, "mean_ms": 14836.718251650018, "median_ms": 14315.335545004928}
+{"device": "cpu", "threads": 8, "method": "longllmlingua", "params": "{\"target_token\": 730}", "n": 20, "mean_ms": 16769.887590549843, "median_ms": 16127.947892997327}

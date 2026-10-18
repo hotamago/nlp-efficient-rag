@@ -89,7 +89,7 @@ def render_docwise(docs: list[Doc], kept: list[str], answers: list[str]) -> str:
                 parts.append(
                     f"<span style='color:#9a9a9a;text-decoration:line-through'>{esc}</span>"
                 )
-        badge = " ⭐ <b>đoạn vàng</b>" if d.is_gold else ""
+        badge = " <b style='color:#a31621'>[đoạn vàng]</b>" if d.is_gold else ""
         status = "giữ" if k else "<span style='color:#c0392b'>bị loại</span>"
         out.append(
             f"<div style='margin:4px 0'><b>[{i}] {html.escape(d.title)}</b> ({status}){badge}<br>"
@@ -117,7 +117,7 @@ def run_one(label: str, question: str, docs: list[Doc], answers: list[str]) -> t
         out = client.generate(build_prompt(question, context))
         answer = out["text"].strip()
         if answers:
-            ok = " ✅" if best_subspan_em(answer, answers) else " ❌"
+            ok = " (đúng)" if best_subspan_em(answer, answers) else " (sai)"
     header = (
         f"### {label}\n**Token:** {orig} → {new} (nén {orig / max(new, 1):.1f}×) · "
         f"**Thời gian nén:** {1000 * comp_s:.0f} ms · **Còn đáp án trong ngữ cảnh:** "
