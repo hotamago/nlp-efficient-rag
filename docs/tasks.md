@@ -18,7 +18,7 @@ Chỉ sửa dòng task của mình (và thêm dòng mới ở cuối). Ngày the
 | ID | Task | Người nhận | Trạng thái | Phụ thuộc | Cập nhật / kết quả |
 |---|---|---|---|---|---|
 | T03 | Track A – pha sinh câu trả lời (vLLM Qwen2.5-7B-AWQ) cho toàn bộ ma trận trong `scripts/run_all_compression.sh` | Sơn/Claude | doing | T02 | 18/10 15:20 – xong closed-book 38,8 · oracle 92,6 · full 65,6/62,2/68,0 (vị trí 1/10/20); còn 11 cấu hình nén (~1 giờ) |
-| T07 | Đo độ trễ bộ nén CPU vs GPU: `uv run python scripts/bench_device.py --n 20` hai lần, với `EFFRAG_DEVICE=cuda` và `EFFRAG_DEVICE=cpu` | Sơn/Claude | doing | – | 18/10 15:22 – đang chạy CPU (8 luồng); GPU chạy sau khi T03 xong |
+| T07 | Đo độ trễ bộ nén CPU vs GPU: `uv run python scripts/bench_device.py --n 20` hai lần, với `EFFRAG_DEVICE=cuda` và `EFFRAG_DEVICE=cpu` | Sơn/Claude | doing | – | 18/10 16:00 – CPU 8 luồng xong (ms/câu): BM25 2 · rerank 196 · dense 361 · OpenProvence 1.598 · Provence 4.906 · LLMLingua-2 13.104 · LongLLMLingua 14.837; GPU chạy sau T03 |
 | T08 | Bảng + hình: `uv run python scripts/make_figures.py` → `docs/report/tables/`, `docs/report/figures/`, `docs/slide/figures/` | Sơn/Claude | todo | T03, T07 | |
 | T09 | Báo cáo LaTeX: viết abstract, results, conclusion, contribution, appendix (`docs/report/sections/`) | Sơn/Claude | todo | T08 | Đã có: titlepage, introduction, related, method, implementation |
 | T10 | Slide Beamer 15–30 trang theo style `docs/slide/template.tex` (HUST đỏ/trắng) → `docs/slide/slides.tex` | Sơn/Claude | doing | T08 | Hình lấy từ `docs/slide/figures/`. File template gốc có tên/MSSV nhóm khác → gitignore, không commit |

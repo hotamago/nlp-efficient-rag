@@ -1,0 +1,12 @@
+label,pos,n,broken_lost,broken_kept,fixed,wrong_kept
+Truncate 730,0,500,0,20,62,130
+Rerank top-10,0,500,12,26,35,128
+Rerank top-5,0,500,28,22,43,94
+Truncate 730,9,500,197,21,5,36
+BM25 top-5,9,500,95,18,29,72
+Dense top-5,9,500,57,20,46,83
+Rerank top-10,9,500,8,28,36,142
+Rerank top-5,9,500,24,27,50,105
+Truncate 730,19,500,219,25,2,36
+Rerank top-10,19,500,12,33,25,133
+Rerank top-5,19,500,30,36,36,105

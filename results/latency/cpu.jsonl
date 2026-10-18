@@ -5,3 +5,7 @@
 {"device": "cpu", "threads": 8, "method": "provence", "params": "{\"threshold\": 0.1}", "n": 20, "mean_ms": 5200.4692354003055, "median_ms": 4961.393848498119}
 {"device": "cpu", "threads": 8, "method": "llmlingua2", "params": "{\"rate\": 0.5}", "n": 20, "mean_ms": 14836.718251650018, "median_ms": 14315.335545004928}
 {"device": "cpu", "threads": 8, "method": "longllmlingua", "params": "{\"target_token\": 730}", "n": 20, "mean_ms": 16769.887590549843, "median_ms": 16127.947892997327}
+{"device": "cpu", "threads": 8, "method": "provence", "params": "{\"model\": \"hotchpotch/open-provence-reranker-v1-gte-modernbert-base\", \"threshold\": 0.1}", "n": 20, "mean_ms": 1742.3521390497626, "median_ms": 1597.7338959964982}
+{"device": "cpu", "threads": 8, "method": "provence", "params": "{\"threshold\": 0.1}", "n": 20, "mean_ms": 5015.881503701166, "median_ms": 4905.636308503745}
+{"device": "cpu", "threads": 8, "method": "llmlingua2", "params": "{\"rate\": 0.5}", "n": 20, "mean_ms": 13390.813955199701, "median_ms": 13104.117878501711}
+{"device": "cpu", "threads": 8, "method": "longllmlingua", "params": "{\"target_token\": 730}", "n": 20, "mean_ms": 14809.781762800048, "median_ms": 14837.402814002417}

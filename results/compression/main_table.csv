@@ -1,0 +1,4 @@
+label,1,10,20,TB,Token,Nén,Recall,ms,family
+Closed-book,38.8,38.8,38.8,38.8,0.0,2874.33,0.2,0.0,Tham chiếu
+Full (20 docs),65.6,62.2,68.0,65.27,2874.53,1.0,100.0,0.0,Tham chiếu
+Oracle,92.6,92.6,92.6,92.6,112.6,25.52,100.0,0.0,Tham chiếu
