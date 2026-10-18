@@ -141,9 +141,11 @@ Trên kho gộp $\sim$50,7 nghìn đoạn, chúng tôi so sánh:
   Transformer, 1024 chiều, hỗ trợ Matryoshka).
   \item \textbf{bge-small-en-v1.5} (33M, 384 chiều) với chỉ mục chính xác (flat), xấp xỉ (HNSW, $M=32$),
   lượng tử int8 và nhị phân.
-  \item \textbf{Qwen3-Embedding-0.6B}~\cite{zhang2025qwen3emb} (1024 chiều) với cắt Matryoshka
-  1024/256/64 chiều và lượng tử int8/nhị phân.
 \end{itemize}
+Cắt Matryoshka được minh hoạ qua static embedding 1024 $\to$ 256 chiều. Cấu hình cho
+Qwen3-Embedding-0.6B~\cite{zhang2025qwen3emb} có sẵn trong mã (\texttt{run\_retrieval.py}) nhưng
+không được chạy trong báo cáo: mã hoá 50,7k đoạn bằng mô hình 0,6B chiếm GPU trong khi GPU đang phục vụ
+LLM, và lợi ích của nó đã được công bố trên MTEB.
 Lượng tử int8 ánh xạ tuyến tính mỗi chiều về 256 mức (theo min/max trên kho). Lượng tử nhị phân giữ
 dấu của từng chiều (1 bit), tìm kiếm bằng khoảng cách Hamming trên $4k$ ứng viên, sau đó \emph{rescore}
 bằng tích vô hướng giữa vector truy vấn float và vector tài liệu $\{-1,+1\}$~\cite{hfquant2024} -- không

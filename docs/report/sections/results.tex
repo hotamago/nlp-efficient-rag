@@ -1,1 +1,128 @@
-% TODO
+\section{Kết quả và thảo luận}
+\label{sec:results}
+
+Mọi số liệu trong mục này được sinh tự động từ \texttt{results/} bằng
+\texttt{scripts/make\_figures.py}; mỗi câu hỏi có một dòng trong các tệp \texttt{.jsonl} đã commit.
+Trừ khi ghi chú khác, $n=500$ câu hỏi, các vị trí đoạn vàng 1/10/20, reader Qwen2.5-7B-Instruct-AWQ.
+
+%------------------------------------------------------------------------------
+\subsection{Bộ nén giữ được bao nhiêu bằng chứng?}
+\label{sec:res-recall}
+
+Bảng~\ref{tab:recall} đo \emph{context recall} -- tỉ lệ câu hỏi mà đáp án còn nằm trong ngữ cảnh sau
+nén -- cho mọi bộ nén mà không cần gọi LLM. Đây là trần trên của độ chính xác sau nén: nếu đáp án đã bị
+xoá thì reader chỉ còn trả lời được bằng tri thức tham số (closed-book).
+
+\begin{table}[t]
+\centering
+\caption{Context recall (\%) theo vị trí đoạn vàng, số token sau nén, tỉ lệ nén và độ trễ nén trung
+bình mỗi câu hỏi (GPU). Bộ nén mức tài liệu/token/câu xử lý từng đoạn độc lập nên recall không phụ
+thuộc vị trí. LongLLMLingua: $n=200$, chỉ vị trí 10.}
+\label{tab:recall}
+\small
+\begin{tabular}{l r r r r r r}
+\toprule
+Bộ nén & Token & Nén & R@1 & R@10 & R@20 & ms/câu \\
+\midrule
+\input{tables/recall}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Nhận xét.}
+\begin{itemize}
+  \item \textbf{Ở cùng mức nén $\approx$4$\times$, nén mức câu giữ bằng chứng tốt nhất}: Provence
+  ($\tau=0{,}1$) giữ 91,6\% đáp án với 621 token (4,6$\times$), hơn Rerank top-5 (79,4\%) 12,2 điểm,
+  hơn LongLLMLingua (77,5\%) và LLMLingua-2 $r=0{,}25$ (68,0\%) lần lượt 14 và 24 điểm. Cắt tỉa theo
+  \emph{câu}, có điều kiện câu hỏi, giữ nguyên các câu chứa đáp án; còn bỏ token rời rạc (LLMLingua-2
+  không nhìn câu hỏi) có thể làm mất chính thực thể cần trả lời.
+  \item \textbf{Ở $\approx$2$\times$}, OpenProvence (96,4\%, 2,6$\times$) và Provence $\tau=0{,}01$
+  (95,8\%, 2,5$\times$) gần như không mất bằng chứng; Rerank top-10 (89,8\%) và LLMLingua-2 $r=0{,}5$
+  (88,2\%) mất khoảng 10\%.
+  \item \textbf{BM25 kém trong bối cảnh này} (53,2\% ở top-5): 19 đoạn nhiễu của bộ dữ liệu vốn được
+  Contriever truy hồi là ``hard negative'' có độ trùng từ vựng cao với câu hỏi. Cross-encoder MiniLM
+  (22M tham số), đọc câu hỏi và đoạn cùng lúc, cho recall cao hơn bi-encoder bge-small 10,4 điểm mà
+  vẫn nhanh hơn (14 so với 121 ms mỗi câu trong cài đặt của chúng tôi).
+  \item \textbf{Truncate} đúng như kỳ vọng: giữ trọn đáp án khi đoạn vàng ở đầu và mất gần hết khi đoạn
+  vàng ở giữa/cuối -- một baseline cho thấy vì sao cần nén \emph{có điều kiện câu hỏi}.
+\end{itemize}
+
+%------------------------------------------------------------------------------
+\subsection{Độ chính xác của RAG sau nén}
+\label{sec:res-main}
+
+% TODO(T09): main_results + tradeoff + significance after T03 finishes
+
+%------------------------------------------------------------------------------
+\subsection{Nén và hiện tượng \emph{lost in the middle}}
+\label{sec:res-position}
+
+% TODO(T09)
+
+%------------------------------------------------------------------------------
+\subsection{Đối chiếu với số liệu đã công bố}
+\label{sec:res-published}
+
+% TODO(T09)
+
+%------------------------------------------------------------------------------
+\subsection{Nén mềm}
+\label{sec:res-soft}
+
+% TODO(T09): PISCO (T12) + own encode-once model (T16-T18)
+
+%------------------------------------------------------------------------------
+\subsection{Truy hồi hiệu quả}
+\label{sec:res-retrieval}
+
+Bảng~\ref{tab:retrieval} so sánh các retriever trên kho gộp 50,7k đoạn (mọi đoạn của 2.655 câu hỏi),
+với 500 câu hỏi của tập đánh giá.
+
+\begin{table}[t]
+\centering
+\caption{Truy hồi trên kho 50,7k đoạn ($n=500$). Hit@$k$: top-$k$ chứa đoạn có đáp án (\%); MRR@10
+của đoạn vàng (\%); kích thước chỉ mục (MB); thời gian truy vấn mỗi câu khi chạy theo batch và khi
+chạy từng câu (ms, GPU cho mô hình nhúng).}
+\label{tab:retrieval}
+\small
+\begin{tabular}{l r r r r r r r}
+\toprule
+Hệ thống & Hit@1 & Hit@5 & Hit@20 & MRR@10 & MB & ms (batch) & ms (1 câu) \\
+\midrule
+\input{tables/retrieval}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.75\linewidth]{retrieval_hit5.pdf}
+\caption{Answer-hit@5 của các retriever trên kho 50,7k đoạn.}
+\label{fig:retrieval}
+\end{figure}
+
+\paragraph{Nhận xét.}
+\begin{itemize}
+  \item \textbf{Retriever dày đặc nhỏ vượt xa BM25}: bge-small (33M) đạt hit@5 76,2\% so với 55,2\%
+  của BM25S, MRR@10 53,8 so với 31,6.
+  \item \textbf{Lượng tử int8 miễn phí}: chỉ mục giảm 4$\times$ (74,3 $\to$ 18,6 MB) mà hit@5 giữ
+  nguyên 76,2\%; MRR@10 chỉ giảm 0,1 điểm.
+  \item \textbf{Nhị phân + rescore}: chỉ mục 2,3 MB (32$\times$ nhỏ hơn) vẫn đạt 73,4\% hit@5 (mất 2,8
+  điểm), hit@20 gần như không đổi (94,4 so với 95,4) -- phù hợp làm tầng truy hồi đầu, sau đó rerank.
+  \item \textbf{Static embedding} (không có Transformer) ngang BM25 về chất lượng (55,8--56,6\%) và
+  không cần GPU; cắt Matryoshka 1024 $\to$ 256 chiều giảm chỉ mục 4$\times$ chỉ mất 0,8 điểm hit@5.
+  \item HNSW giảm độ trễ truy vấn đơn (12,6 $\to$ 5,5 ms) đổi lấy 1,4 điểm hit@5; ở quy mô 50k đoạn,
+  tìm kiếm chính xác vẫn đủ nhanh.
+\end{itemize}
+
+%------------------------------------------------------------------------------
+\subsection{Chạy không cần GPU}
+\label{sec:res-cpu}
+
+% TODO(T07)
+
+%------------------------------------------------------------------------------
+\subsection{Phân tích lỗi}
+\label{sec:res-errors}
+
+% TODO(T14)
