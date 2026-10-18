@@ -80,6 +80,58 @@ và tái sử dụng cho năm vị trí đoạn vàng (chỉ thứ tự thay đ�
 là độ trễ đo ở lần tính đầu tiên. Sau khi nén, các đoạn còn lại \emph{giữ nguyên thứ tự} và được đánh
 số lại, nhờ đó biến ``vị trí đoạn vàng'' vẫn có ý nghĩa, giống thiết lập của các bảng đã công bố.
 
+\subsection{Nén mềm ``encode-once'' (phương pháp đề xuất)}
+\label{sec:soft}
+
+Các bộ nén ở trên đều giữ ngữ cảnh dưới dạng \emph{văn bản}, nên tỉ lệ nén bị chặn bởi lượng chữ
+phải giữ lại. Chúng tôi thử một hướng khác: nén mỗi đoạn thành một \emph{ma trận} nhỏ gồm $m$ vector
+trong không gian embedding của LLM, theo dòng PISCO/COCOM~\cite{louis2025pisco,rau2025cocom}, và
+huấn luyện với ngân sách của một GPU 12\,GB.
+
+\paragraph{Kiến trúc.} Một LLM nhân quả $f_\theta$ (Qwen2.5-1.5B-Instruct) đóng hai vai trò nhờ hai
+adapter LoRA~\cite{hu2022lora} riêng:
+\begin{itemize}
+  \item \textbf{Encoder} $E$ (adapter $\phi_E$): đọc đoạn $d_j$ (tối đa 128 token, gồm tiêu đề và
+  nội dung), nối thêm $m=8$ vector nhớ học được $\mathbf{s}_1,\ldots,\mathbf{s}_m$. Trạng thái ẩn
+  cuối tại các vị trí nhớ được chiếu tuyến tính, chuẩn hoá L2 và nhân với hệ số học được, ra
+  $M_j = E(d_j) \in \mathbb{R}^{m\times h}$. Bước chuẩn hoá cần thiết vì trạng thái ẩn cuối của
+  Qwen2.5 lớn hơn embedding token khoảng 600 lần; không có bước này, loss ban đầu là 17 thay vì 4,3.
+  \item \textbf{Decoder} $D$ (adapter $\phi_D$): nhận \emph{đúng} prompt Lost-in-the-Middle (cùng
+  chat template), trong đó phần nội dung của mỗi \texttt{Document [i](Title: \ldots)} được thay bằng
+  $m$ vector $M_j$, rồi sinh câu trả lời.
+\end{itemize}
+Vì $E$ không nhìn câu hỏi, $M_j$ có thể \textbf{tính trước một lần cho cả kho} (encode-once) và
+lưu lại như một chỉ mục. Khi hỏi, decoder chỉ xử lý khoảng $20\times(m+\text{token tiêu đề})$
+vị trí thay vì $\sim$2.900 token, tức tỉ lệ nén ngữ cảnh khoảng $6\times$ nếu tính cả tiêu đề và
+$\sim$18$\times$ nếu chỉ tính phần nội dung.
+
+\paragraph{Biến thể lai (cứng + mềm).} Lấy cảm hứng từ việc DeepSeek-V4 kết hợp ``chọn top-$k$ mục
+để nhìn chi tiết'' với ``nhìn toàn bộ ở dạng nén''~\cite{deepseek2026v4}, biến thể \emph{hybrid} giữ
+nguyên văn bản của đoạn được cross-encoder xếp hạng cao nhất, các đoạn còn lại ở dạng vector nhớ. Lúc
+huấn luyện, với xác suất 0,5 một đoạn được ``mở'' thành văn bản (là đoạn vàng với xác suất 0,6), để
+decoder quen với ngữ cảnh trộn và không mặc định rằng đoạn mở luôn chứa đáp án.
+
+\paragraph{Huấn luyện.} Hàm mất mát là cross-entropy trên token câu trả lời; $\phi_E$, $\phi_D$,
+$\mathbf{s}$ và phép chiếu được học đồng thời end-to-end, phần thân LLM được đóng băng.
+\begin{itemize}
+  \item \textbf{Dữ liệu}: 15.000 câu hỏi từ NQ-train của Tevatron~\cite{tevatron} (đoạn Wikipedia
+  100 từ kiểu DPR, cùng nguồn với benchmark), đã loại 33 câu trùng với 2.655 câu của tập kiểm tra
+  LITM. Mỗi mẫu có $k\in\{5,10,20\}$ đoạn (1 đoạn đúng và các đoạn nhiễu khó do BM25 tìm), với đoạn
+  đúng đặt ở \emph{vị trí ngẫu nhiên}.
+  \item \textbf{Siêu tham số}: LoRA $r=16$ trên mọi lớp tuyến tính, AdamW với lr $10^{-4}$, warm-up
+  50 bước rồi cosine, 8 mẫu mỗi bước, gradient checkpointing, bf16, 1 epoch.
+\end{itemize}
+
+\paragraph{Cổng dừng.} Trước khi đánh giá trên LITM, mô hình phải vượt một cổng trên 200 câu dev
+(Tevatron, 20 đoạn). Điều kiện: độ chính xác cao hơn closed-book của cùng LLM ít nhất 10 điểm
+\emph{và} đạt ít nhất 70\% độ chính xác khi đọc văn bản đầy đủ. Cổng này được đặt trước để tránh
+``chọn kết quả đẹp'' sau khi đã thấy số liệu kiểm tra.
+
+\paragraph{Đối chứng với checkpoint công bố.} Song song, chúng tôi chạy \texttt{naver/pisco-mistral}
+(Mistral-7B, lượng tử 4-bit) trên cùng 500 câu và 3 vị trí, kèm các dòng full-text, closed-book và
+oracle của chính bộ giải mã đó. Mục đích là tách ảnh hưởng của dữ liệu và quy mô huấn luyện khỏi ảnh
+hưởng của phương pháp.
+
 \subsection{Các phương pháp truy hồi hiệu quả}
 
 Trên kho gộp $\sim$50,7 nghìn đoạn, chúng tôi so sánh:

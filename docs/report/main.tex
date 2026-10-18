@@ -1,41 +1,93 @@
-% Compile with XeLaTeX (Overleaf: Menu -> Compiler -> XeLaTeX) or `tectonic main.tex`.
+%==============================================================================
+%  Efficient RAG – Báo cáo BTL IT4772 (Xử lý ngôn ngữ tự nhiên)
+%  Style: HUST đỏ/trắng (theo template báo cáo của nhóm).
+%  Biên dịch bằng XeLaTeX (Overleaf: Menu -> Compiler -> XeLaTeX) hoặc `tectonic main.tex`.
+%==============================================================================
 \documentclass[11pt,a4paper]{article}
 
 \usepackage{fontspec}
 \usepackage[vietnamese,english]{babel}
-\setmainfont{TeX Gyre Termes}
-\setsansfont{TeX Gyre Heros}
-\setmonofont{TeX Gyre Cursor}
+% font files ship with TeX Live / Overleaf / tectonic (portable, no system fonts needed)
+\setmainfont{texgyretermes}[Extension=.otf, UprightFont=*-regular, BoldFont=*-bold,
+  ItalicFont=*-italic, BoldItalicFont=*-bolditalic]
+\setsansfont{texgyreheros}[Extension=.otf, UprightFont=*-regular, BoldFont=*-bold,
+  ItalicFont=*-italic, BoldItalicFont=*-bolditalic]
+\setmonofont{texgyrecursor}[Extension=.otf, UprightFont=*-regular, BoldFont=*-bold,
+  ItalicFont=*-italic, BoldItalicFont=*-bolditalic, Scale=MatchLowercase]
 
-\usepackage[a4paper,margin=2.3cm]{geometry}
+\usepackage{microtype}
+\usepackage[a4paper,margin=2.5cm,headheight=15pt]{geometry}
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
-\usepackage{booktabs,multirow,tabularx,makecell}
 \usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{booktabs,multirow,tabularx,makecell,array}
 \usepackage{caption,subcaption}
 \usepackage{enumitem}
 \usepackage{listings}
 \usepackage[numbers,sort&compress]{natbib}
-\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=green!40!black,urlcolor=blue!60!black]{hyperref}
+\usepackage[colorlinks=true]{hyperref}
 \usepackage{url}
 
-\definecolor{hustred}{RGB}{170,25,40}
-\definecolor{codebg}{RGB}{245,245,245}
-\lstset{basicstyle=\ttfamily\footnotesize,backgroundcolor=\color{codebg},frame=single,
-  breaklines=true,columns=fullflexible,keepspaces=true}
-\captionsetup{font=small,labelfont=bf}
+%------------------------------------------------------------------ HUST colours
+\definecolor{hustred}{HTML}{A31621}
+\definecolor{hustdark}{HTML}{5C0A14}
+\definecolor{codebg}{HTML}{FBF7F7}
+\definecolor{codegray}{HTML}{6E6E6E}
+\definecolor{codestr}{HTML}{2A6F5A}
+\hypersetup{linkcolor=hustdark,urlcolor=hustred,citecolor=hustdark}
+
+%------------------------------------------------------------------ section look
+\titleformat{\section}
+  {\Large\bfseries\color{hustred}}{\thesection}{0.6em}{}
+  [{\vspace{-0.4ex}{\color{hustred}\titlerule[1.1pt]}}]
+\titleformat{\subsection}
+  {\large\bfseries\color{hustdark}}{\thesubsection}{0.5em}{}
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{hustdark}}{\thesubsubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{2.2ex plus .2ex}{1.2ex}
+
+%------------------------------------------------------------------ headers
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{hustdark}\textbf{Efficient RAG}\;\textcolor{hustred}{\textbar}\;
+  Nén ngữ cảnh \& truy hồi hiệu quả}
+\fancyhead[R]{\small\color{hustdark}Báo cáo BTL IT4772}
+\fancyfoot[C]{\small\color{hustdark}\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{hustred}\leaders\hrule height 1pt\hfill}}
+\renewcommand{\footrulewidth}{0pt}
+
+%------------------------------------------------------------------ code, captions, lists
+\lstset{
+  basicstyle=\ttfamily\small, keywordstyle=\color{hustred}\bfseries,
+  commentstyle=\color{codegray}\itshape, stringstyle=\color{codestr},
+  backgroundcolor=\color{codebg}, frame=single, rulecolor=\color{hustred!55},
+  framesep=6pt, xleftmargin=10pt, xrightmargin=6pt, aboveskip=1.1em, belowskip=0.6em,
+  showstringspaces=false, breaklines=true, columns=fullflexible, keepspaces=true,
+}
+\captionsetup{font=small,labelfont={bf,color=hustdark}}
+\setlength{\parskip}{0.35em}
+\setlength{\parindent}{0pt}
+\setlength{\emergencystretch}{3em}
 \setlist{itemsep=2pt,topsep=4pt}
 \graphicspath{{figures/}}
 \newcommand{\best}[1]{\textbf{#1}}
 
+%==============================================================================
 \begin{document}
 \selectlanguage{vietnamese}
 
 \input{sections/titlepage}
-\tableofcontents
-\newpage
 
+\pagenumbering{roman}
 \input{sections/abstract}
+\newpage
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
 \input{sections/introduction}
 \input{sections/related}
 \input{sections/method}

@@ -50,3 +50,35 @@ def write_jsonl(path: Path, rows: list[dict]) -> None:
     with path.open("w") as f:
         for r in rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+
+def record_run(rows: list[dict], *, run_id: str, method: str, params: dict, gold_pos: int,
+               llm_model: str, seed: int, track: str = "compression") -> dict:  # fmt: skip
+    """Write per-question rows and append the summary line for one (config, gold position).
+
+    Rows need: accuracy, em, f1, orig_tokens, comp_tokens, compress_s, llm_s (ctx_recall optional).
+    Used by scripts that do not go through run_compression.py (soft compression, PISCO, ...).
+    """
+    import numpy as np
+
+    write_jsonl(RESULTS_DIR / track / f"{run_id}_gold{gold_pos}.jsonl", rows)
+
+    def mean(key: str) -> float:
+        vals = [r[key] for r in rows if r.get(key) is not None]
+        return float(np.mean(vals)) if vals else float("nan")
+
+    comp = mean("comp_tokens")
+    summary = {
+        "run_id": run_id, "date": f"{datetime.now():%Y-%m-%d %H:%M}", "git": git_commit(),
+        "track": track, "dataset": "litm_nq20", "method": method,
+        "params": json.dumps(params, sort_keys=True), "gold_pos": gold_pos, "n": len(rows),
+        "seed": seed, "llm_model": llm_model, "ctx_recall": round(mean("ctx_recall"), 4),
+        "accuracy": round(mean("accuracy"), 4), "em": round(mean("em"), 4),
+        "f1": round(mean("f1"), 4), "orig_tokens": round(mean("orig_tokens"), 1),
+        "comp_tokens": round(comp, 1), "ratio": round(mean("orig_tokens") / max(comp, 1), 2),
+        "compress_ms": round(1000 * mean("compress_s"), 1),
+        "llm_ms": round(1000 * mean("llm_s"), 1), "cost_usd_per_1k_q": float("nan"),
+    }  # fmt: skip
+    append_summary(track, summary)
+    print(f"{method} {params} gold@{gold_pos}: acc={summary['accuracy']} ratio={summary['ratio']}")
+    return summary

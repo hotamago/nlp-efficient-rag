@@ -33,6 +33,7 @@ dev = [
     "ruff>=0.6",
     "ipykernel",
     "python-pptx>=1.0.2",
+    "pymupdf>=1.28.2",
 ]
 demo = ["gradio>=4.40"]
 viz = ["matplotlib>=3.8", "seaborn>=0.13"]

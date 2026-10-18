@@ -14,17 +14,16 @@ from __future__ import annotations
 import argparse
 import json
 import time
-from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import torch
 from tqdm import tqdm
 
-from effrag.config import DATA_DIR, RESULTS_DIR, SEED
+from effrag.config import DATA_DIR, SEED
 from effrag.data import load_litm_nq
 from effrag.metrics import best_subspan_em, exact_match, f1
-from effrag.results import append_summary, git_commit, new_run_id, write_jsonl
+from effrag.results import new_run_id, record_run
 from effrag.soft.model import SoftRAG
 from effrag.tokens import count_tokens
 
@@ -91,26 +90,8 @@ def litm(model: SoftRAG, run: str, variants: list[str], positions: list[int], n:
                     "accuracy": best_subspan_em(pred, ex.answers),
                     "em": exact_match(pred, ex.answers), "f1": f1(pred, ex.answers),
                 })  # fmt: skip
-            write_jsonl(RESULTS_DIR / "compression" / f"{run_id}_gold{pos}.jsonl", rows)
-
-            def mean(key: str, rows: list[dict] = rows) -> float:
-                return float(np.mean([r[key] for r in rows]))
-
-            comp_tok = mean("comp_tokens")
-            summary = {
-                "run_id": run_id, "date": f"{datetime.now():%Y-%m-%d %H:%M}", "git": git_commit(),
-                "track": "compression", "dataset": "litm_nq20", "method": "soft",
-                "params": json.dumps(params, sort_keys=True), "gold_pos": pos, "n": len(rows),
-                "seed": SEED, "llm_model": f"{base}+soft", "ctx_recall": float("nan"),
-                "accuracy": round(mean("accuracy"), 4), "em": round(mean("em"), 4),
-                "f1": round(mean("f1"), 4), "orig_tokens": round(mean("orig_tokens"), 1),
-                "comp_tokens": round(comp_tok, 1),
-                "ratio": round(mean("orig_tokens") / max(comp_tok, 1), 2),
-                "compress_ms": round(1000 * mean("compress_s"), 1),
-                "llm_ms": round(1000 * mean("llm_s"), 1), "cost_usd_per_1k_q": float("nan"),
-            }  # fmt: skip
-            append_summary("compression", summary)
-            print(f"{variant} gold@{pos}: acc={summary['accuracy']} ratio={summary['ratio']}")
+            record_run(rows, run_id=run_id, method="soft", params=params, gold_pos=pos,
+                       llm_model=f"{base}+soft", seed=SEED)  # fmt: skip
 
 
 def main() -> None:
