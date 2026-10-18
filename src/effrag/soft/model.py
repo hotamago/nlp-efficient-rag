@@ -33,6 +33,7 @@ class SoftConfig:
     doc_max_tokens: int = 128
     lora_r: int = 16
     lora_dropout: float = 0.05
+    drop_dims: int = 8  # massive-activation channels zeroed before the projection (see _calibrate)
 
 
 def _set_active_adapter(model: nn.Module, name: str) -> None:
@@ -81,6 +82,7 @@ class SoftRAG(nn.Module):
         with torch.no_grad():
             self.proj.weight.copy_(torch.eye(h))
             self.proj.bias.zero_()
+        self.register_buffer("keep", torch.ones(h))
         if adapters_dir:
             extra = torch.load(
                 f"{adapters_dir}/soft_extra.pt", map_location="cpu", weights_only=True
@@ -88,7 +90,29 @@ class SoftRAG(nn.Module):
             self.mem.data.copy_(extra["mem"])
             self.proj.load_state_dict(extra["proj"])
             self.out_scale.data.fill_(float(extra["out_scale"]))
+            if "keep" in extra:  # runs saved before drop_dims existed keep every channel
+                self.keep.copy_(extra["keep"])
         self.to(self.device)
+        if not adapters_dir and cfg.drop_dims:
+            self._calibrate()
+
+    @torch.no_grad()
+    def _calibrate(self) -> None:
+        """Zero the few channels that carry Qwen's massive activations in the last hidden state.
+
+        After the decoder's input RMSNorm only the direction of a memory vector matters, and the
+        raw direction is dominated by these channels: the untrained soft loss on Qwen2.5-1.5B is
+        ~15 nats (worse than uniform, closed-book 5.6). Zeroing the top-8 channels brings it to
+        ~7.8, close to all-zero memory (7.5), so training starts from harmless memory slots."""
+        _set_active_adapter(self.lm, "encoder")
+        text = (
+            "(Title: Natural Questions) The quick brown fox jumps over the lazy dog. Retrieval-"
+            "augmented generation feeds retrieved passages to a language model, which answers the "
+            "question using only the provided documents."
+        )
+        ids = torch.tensor([self.tok(text, add_special_tokens=False).input_ids], device=self.device)
+        hs = self.lm(input_ids=ids, output_hidden_states=True).hidden_states[-1][0].float()
+        self.keep[hs.abs().mean(0).topk(self.cfg.drop_dims).indices] = 0
 
     # ----------------------------------------------------------------- parameters
     def trainable_parameters(self) -> list[nn.Parameter]:
@@ -106,7 +130,7 @@ class SoftRAG(nn.Module):
             for f in ("adapter_config.json", "adapter_model.safetensors"):
                 (out / f).replace(out / "decoder" / f)
         extra = {"mem": self.mem.detach().cpu(), "proj": self.proj.state_dict(),
-                 "out_scale": self.out_scale.item()}  # fmt: skip
+                 "out_scale": self.out_scale.item(), "keep": self.keep.cpu()}  # fmt: skip
         torch.save(extra, out / "soft_extra.pt")
         (out / "soft_config.json").write_text(json.dumps(asdict(self.cfg)))
 
@@ -154,7 +178,7 @@ class SoftRAG(nn.Module):
                 # gradient checkpointing recomputes the encoder layers during backward, after the
                 # decoder adapter was activated; switch back once backward reaches the encoder
                 hs.register_hook(self._activate_encoder)
-            v = self.proj(hs[:, -self.cfg.n_mem :].float())
+            v = self.proj(hs[:, -self.cfg.n_mem :].float() * self.keep)
             outs.append(nn.functional.normalize(v, dim=-1) * self.out_scale)
         return torch.cat(outs)
 
