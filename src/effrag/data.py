@@ -9,6 +9,7 @@ import gzip
 import json
 import random
 from dataclasses import dataclass
+from pathlib import Path
 
 from effrag.config import DATA_DIR, SEED
 
@@ -69,3 +70,25 @@ def litm_corpus(gold_pos: int = 0) -> list[Doc]:
                 seen.add(key)
                 corpus.append(Doc(d.title, d.text))
     return corpus
+
+
+def retrieved_path(retriever: str, n: int, seed: int, k: int = 20) -> Path:
+    return DATA_DIR / "cache" / "retrieved" / f"{retriever}_k{k}_n{n}_seed{seed}.json"
+
+
+def load_retrieved(retriever: str, n: int = 500, seed: int = SEED, k: int = 20) -> list[Example]:
+    """Track C: the same questions as `load_litm_nq`, but with the top-k passages a retriever found
+    in the pooled corpus (`litm_corpus`), in rank order. Built by scripts/build_retrieved.py."""
+    from effrag.metrics import best_subspan_em
+
+    path = retrieved_path(retriever, n, seed, k)
+    if not path.exists():
+        raise FileNotFoundError(f"{path} missing, run scripts/build_retrieved.py")
+    ids = json.loads(path.read_text())
+    corpus = litm_corpus(0)
+    out = []
+    for ex in load_litm_nq(0, n=n, seed=seed):
+        docs = [corpus[i] for i in ids[ex.qid]]
+        docs = [Doc(d.title, d.text, best_subspan_em(d.text, ex.answers)) for d in docs]
+        out.append(Example(ex.qid, ex.question, ex.answers, docs))
+    return out

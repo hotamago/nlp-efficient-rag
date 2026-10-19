@@ -7,6 +7,10 @@ Examples:
   uv run python scripts/run_compression.py --method llmlingua2 --params '{"rate": 0.25}'
   uv run python scripts/run_compression.py --method provence --params '{"threshold": 0.1}' \
       --positions 0 9 19
+
+Track C (end-to-end): --retriever NAME replaces the 20 LITM documents by the top-20 passages that
+retriever found in the pooled corpus (scripts/build_retrieved.py); results go to results/e2e/ with
+gold_pos -1 (no fixed gold position).
 """
 
 import argparse
@@ -20,7 +24,7 @@ from tqdm import tqdm
 
 from effrag.compression import get_compressor
 from effrag.config import DATA_DIR, RESULTS_DIR, SEED, LLMSettings
-from effrag.data import load_litm_nq
+from effrag.data import load_litm_nq, load_retrieved
 from effrag.metrics import best_subspan_em, exact_match, f1
 from effrag.results import append_summary, git_commit, new_run_id, write_jsonl
 
@@ -34,12 +38,18 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=SEED)
     ap.add_argument("--workers", type=int, default=32, help="concurrent LLM requests")
     ap.add_argument("--dry-run", action="store_true", help="compress only, skip the LLM")
+    ap.add_argument("--retriever", default=None, help="Track C: use retrieved top-20 passages")
     args = ap.parse_args()
+    if args.retriever:
+        args.positions = [-1]
 
     user_params = json.loads(args.params)
     settings = LLMSettings()
     run_id = new_run_id(args.method)
     track = "compression_dryrun" if args.dry_run else "compression"
+    dataset = "litm_nq20"
+    if args.retriever:
+        track, dataset = ("e2e_dryrun" if args.dry_run else "e2e"), f"pooled_{args.retriever}"
 
     # Phase 1: compression (cached on disk, so LLM runs can reuse a previous --dry-run).
     # The compressor model is only loaded if some position is not cached yet.
@@ -47,6 +57,7 @@ def main() -> None:
     cache_dir = (
         DATA_DIR / "cache" / "compressed"
         / f"{args.method}_{hashlib.md5(user_key.encode()).hexdigest()[:10]}"
+        / (f"e2e_{args.retriever}" if args.retriever else "")
     )  # fmt: skip
     meta_path = cache_dir / "meta.json"
     comp = None
@@ -63,7 +74,12 @@ def main() -> None:
             cache_dir.mkdir(parents=True, exist_ok=True)
             meta_path.write_text(json.dumps({"name": comp.name, "params": comp.params()}))
         rows = []
-        for ex in tqdm(load_litm_nq(pos, n=args.n, seed=args.seed), desc=f"compress gold@{pos}"):
+        data = (
+            load_retrieved(args.retriever, n=args.n, seed=args.seed)
+            if args.retriever
+            else load_litm_nq(pos, n=args.n, seed=args.seed)
+        )
+        for ex in tqdm(data, desc=f"compress gold@{pos}"):
             res = comp.compress(ex.question, ex.docs)
             rows.append({
                 "run_id": run_id, "qid": ex.qid, "gold_pos": pos, "question": ex.question,
@@ -109,7 +125,7 @@ def main() -> None:
         comp_tok = mean("comp_tokens")
         summary = {
             "run_id": run_id, "date": f"{datetime.now():%Y-%m-%d %H:%M}", "git": git_commit(),
-            "track": track, "dataset": "litm_nq20", "method": meta["name"],
+            "track": track, "dataset": dataset, "method": meta["name"],
             "params": params_key, "gold_pos": pos,
             "n": len(rows), "seed": args.seed,
             "llm_model": "" if args.dry_run else settings.model,

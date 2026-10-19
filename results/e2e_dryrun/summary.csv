@@ -1,0 +1,5 @@
+run_id,date,git,track,dataset,method,params,gold_pos,n,seed,llm_model,ctx_recall,accuracy,em,f1,orig_tokens,comp_tokens,ratio,compress_ms,llm_ms,cost_usd_per_1k_q
+20261019-093036-full,2026-10-19 09:30,87f749b,e2e_dryrun,pooled_bge-small-int8,full,{},-1,500,42,,0.954,nan,nan,nan,2874.1,2874.1,1.0,0.0,nan,0.1437
+20261019-093041-rerank_topk,2026-10-19 09:31,87f749b,e2e_dryrun,pooled_bge-small-int8,rerank_topk,"{""k"": 5, ""model"": ""cross-encoder/ms-marco-MiniLM-L6-v2""}",-1,500,42,,0.822,nan,nan,nan,2874.1,697.8,4.12,14.1,nan,0.0349
+20261019-093102-provence,2026-10-19 09:34,87f749b,e2e_dryrun,pooled_bge-small-int8,provence,"{""model"": ""naver/provence-reranker-debertav3-v1"", ""threshold"": 0.1}",-1,500,42,,0.888,nan,nan,nan,2874.1,627.0,4.58,211.7,nan,0.0314
+20261019-093402-llmlingua2,2026-10-19 09:39,87f749b,e2e_dryrun,pooled_bge-small-int8,llmlingua2,"{""model"": ""microsoft/llmlingua-2-xlm-roberta-large-meetingbank"", ""rate"": 0.25}",-1,500,42,,0.686,nan,nan,nan,2874.1,825.5,3.48,469.7,nan,0.0413
