@@ -17,13 +17,8 @@ Chỉ sửa dòng task của mình (và thêm dòng mới ở cuối). Ngày the
 
 | ID | Task | Người nhận | Trạng thái | Phụ thuộc | Cập nhật / kết quả |
 |---|---|---|---|---|---|
-| T08 | Bảng + hình: `uv run python scripts/make_figures.py` → `docs/report/tables/`, `docs/report/figures/`, `docs/slide/figures/` | Sơn/Claude | doing | T03, T07 | |
 | T09 | Báo cáo LaTeX: viết abstract, results, conclusion, contribution, appendix (`docs/report/sections/`) | Sơn/Claude | doing | T08 | 18/10 17:30 – xong results (trừ nén mềm), CPU, conclusion (trừ RQ5), contribution, appendix; còn abstract + mục nén mềm |
-| T10 | Slide Beamer 15–30 trang theo style `docs/slide/template.tex` (HUST đỏ/trắng) → `docs/slide/slides.tex` | Sơn/Claude | doing | T08 | Hình lấy từ `docs/slide/figures/`. File template gốc có tên/MSSV nhóm khác → gitignore, không commit |
-| T16 | P1 – tự huấn luyện nén mềm "encode-once" (ý tưởng của nhóm): Qwen2.5-1.5B-Instruct làm encoder+decoder, LoRA, 8 vector nhớ / 128 token, dữ liệu Tevatron NQ-train (~15k, vị trí vàng ngẫu nhiên, k∈{5,10,20}); biến thể lai top-1 dạng text (ý tưởng indexer/CSA của DeepSeek) | Sơn/Claude | doing | – | 19/10 08:45 – train xong 1 epoch (1.875 bước; resume từ bước 1000 bằng checkpoint đầy đủ), loss 7,4 → ~1,2 (`results/soft/run1_train.jsonl`, Hình soft_loss); đang chạy T17 gate + LITM |
-| T17 | Cổng dừng P1 (21/10): 200 câu Tevatron-dev; đi tiếp nếu acc ≥ closed-book + 10 điểm và ≥ 70% full-text của reader 1.5B, nếu không thì dừng P1 và viết phân tích thất bại | Sơn/Claude | doing | T16 | 19/10 08:55 – gate KHÔNG đạt (dev 200, k=20): closed-book 19,0, văn bản 42,0, soft 22,0 → dừng P1 theo kế hoạch; vẫn đo LITM soft/lai + chẩn đoán để viết phân tích |
-| T18 | Đánh giá P1 trên LITM 500×{1,10,20}: soft16x, lai, + các dòng của reader 1.5B (full, closed-book, oracle, 2–3 bộ nén cứng tốt nhất dùng lại context đã nén) | | todo | T17 | |
-| T13 | Track C – end-to-end: retriever tốt nhất (T06: bge-small int8) top-20 → bộ nén tốt nhất (T03) → LLM trên corpus gộp | | todo | T03 | P1 |
+| T13 | Track C – end-to-end: retriever tốt nhất (T06: bge-small int8) top-20 → bộ nén tốt nhất (T03) → LLM trên corpus gộp | Sơn/Claude | doing | T03 | 19/10 09:50 – nhận |
 | T15 | Cập nhật `README.md`, `docs/plan.md` theo kết quả cuối | Sơn/Claude | doing | T09 | 18/10 – README có mục Kết quả chính (Track A/B, CPU); chờ số nén mềm |
 
 ## Đã xong
@@ -41,3 +36,8 @@ Chỉ sửa dòng task của mình (và thêm dòng mới ở cuối). Ngày the
 | T07 | Độ trễ bộ nén CPU vs GPU (n=20, trung vị ms/câu) | Sơn/Claude | GPU/CPU: rerank 16/196 · Provence 200/4.906 · LLMLingua-2 455/13.104 · LongLLMLingua 625/14.837; CPU chậm 12–29×. `results/latency/`, `tables/latency.tex`, báo cáo §res-cpu, slide 14 |
 | T14 | Phân tích lỗi so với ngữ cảnh đầy đủ | Sơn/Claude | Provence: mất BC 1,7% · hỏng dù còn BC 8,4% · được sửa 8,8%; LLMLingua-2 r=0,25 hỏng dù còn BC 19,0% (văn bản vụn) – `scripts/error_analysis.py`, `tables/errors.tex`, báo cáo §res-errors |
 | T12 | P0 – đánh giá PISCO (`naver/pisco-mistral`, nf4) trên LITM 500×{1,10,20} | Sơn/Claude | PISCO TB 48,2 (18×) vs văn bản cùng reader 60,3 (giảm 9/10/17 điểm, có ý nghĩa); closed-book 36,2, oracle 89,6; rerank-5→PISCO @10 56,2 (72×) vs text 63,0. `results/compression/*pisco*`, `*mistral_text*`, `tab:soft` |
+| T08 | Bảng + hình (`scripts/make_figures.py`) | Sơn/Claude | Bảng chính, recall, độ trễ, truy hồi, nén mềm (+ bản tách cho slide), hình vị trí/đánh đổi/pipeline/loss nén mềm → `docs/report/{tables,figures}`, `docs/slide/{tables,figures}` |
+| T10 | Slide Beamer (`docs/slide/slides.tex`) | Sơn/Claude | 17 trang, biên dịch sạch, `docs/slide/slides.pdf`; gói Overleaf: `scripts/overleaf_zip.py` |
+| T16 | P1 – tự huấn luyện nén mềm encode-once (Qwen2.5-1.5B, 2 LoRA, 8 vector/128 token, 15k mẫu Tevatron NQ) | Sơn/Claude | 1 epoch, loss 7,4 → ~1,2; checkpoint resume đầy đủ mỗi 100 bước. `results/soft/run1_train.jsonl`, `scripts/train_soft.py` |
+| T17 | Cổng dừng P1 (dev 200) | Sơn/Claude | KHÔNG đạt: soft 22,0 vs closed-book 19,0 / văn bản 42,0 → dừng P1. Chẩn đoán: chỉ đoạn vàng dạng 8 vector 23 vs văn bản 72; lai với đoạn vàng mở 70. `results/soft/{gate,diag}.json` |
+| T18 | Đánh giá P1 trên LITM 500×{1,10,20} + baseline reader 1.5B | Sơn/Claude | Soft 25,7 ≈ closed-book 26,2; lai 48,5 (5,5×) = rerank top-1 văn bản 49,2; full 45,3; Provence 52,8 (+7,5, có ý nghĩa: reader 1.5B nhạy vị trí). `tab:soft`, `sec:res-soft` |
