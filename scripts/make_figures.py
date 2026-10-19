@@ -426,6 +426,35 @@ def fig_pipeline() -> None:
     save(fig, "pipeline")
 
 
+def e2e_table() -> pd.DataFrame | None:
+    """Track C: retrieved top-20 (pooled corpus) -> compressor -> main reader, with the paired
+    bootstrap difference to the uncompressed top-20 and the LITM closed-book row for reference."""
+    path = RESULTS_DIR / "e2e" / "summary.csv"
+    if not path.exists():
+        return None
+    df = pd.read_csv(path)
+    df = df[(df.n == 500) & (df.llm_model == MAIN_LLM)]
+    df = df.sort_values("date").drop_duplicates(["method", "params"], keep="last")
+    df["label"] = [label(m, p) for m, p in zip(df.method, df.params, strict=True)]
+    acc = {}
+    for r in df.itertuples():
+        rows = [json.loads(x) for x in open(RESULTS_DIR / "e2e" / f"{r.run_id}_gold-1.jsonl")]
+        acc[r.label] = pd.DataFrame(rows).set_index("qid")["accuracy"]
+    rows, lines = [], []
+    for r in df.sort_values("comp_tokens", ascending=False).itertuples():
+        if r.label == BASE:
+            diff = "--"
+        else:
+            m, lo, hi = paired_bootstrap(acc[BASE], acc[r.label])
+            diff = f"{m:+.1f} [{lo:.1f}; {hi:.1f}]".replace("-", "$-$")
+        rows.append({"label": r.label, "recall": 100 * r.ctx_recall, "acc": 100 * r.accuracy,
+                     "tokens": r.comp_tokens, "ratio": r.ratio, "diff": diff})  # fmt: skip
+        lines.append(f"{tex_name(r.label)} & {100 * r.ctx_recall:.1f} & {100 * r.accuracy:.1f} & "
+                     f"{r.comp_tokens:.0f} & {r.ratio:.1f}$\\times$ & {diff} \\\\")  # fmt: skip
+    (TAB / "e2e.tex").write_text("\n".join(lines) + "\n")
+    return pd.DataFrame(rows)
+
+
 def fig_soft_loss() -> None:
     """Training loss of the encode-once soft compressor (results/soft/run1_train.jsonl)."""
     f = RESULTS_DIR / "soft" / "run1_train.jsonl"
@@ -476,6 +505,9 @@ def main() -> None:
     soft = soft_table()
     if soft is not None:
         print(soft.round(1).to_string())
+    e2e = e2e_table()
+    if e2e is not None:
+        print(e2e.round(1).to_string())
     sig = significance(["Rerank top-5", "Rerank top-10", "LLMLingua-2 r=0.25",
                         "Rerank-10 → LLMLingua-2", "Provence τ=0.1", "OpenProvence τ=0.1",
                         "Truncate 730"])  # fmt: skip

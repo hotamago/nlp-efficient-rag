@@ -1,0 +1,5 @@
+run_id,date,git,track,dataset,method,params,gold_pos,n,seed,llm_model,ctx_recall,accuracy,em,f1,orig_tokens,comp_tokens,ratio,compress_ms,llm_ms,cost_usd_per_1k_q
+20261019-094424-full,2026-10-19 09:50,598731c,e2e,pooled_bge-small-int8,full,{},-1,500,42,qwen2.5-7b-instruct,0.954,0.66,0.0,0.0649,2874.1,2874.1,1.0,0.0,24634.6,0.1437
+20261019-095054-rerank_topk,2026-10-19 09:52,598731c,e2e,pooled_bge-small-int8,rerank_topk,"{""k"": 5, ""model"": ""cross-encoder/ms-marco-MiniLM-L6-v2""}",-1,500,42,qwen2.5-7b-instruct,0.822,0.63,0.0,0.0754,2874.1,697.8,4.12,14.1,6712.0,0.0349
+20261019-095233-provence,2026-10-19 09:54,598731c,e2e,pooled_bge-small-int8,provence,"{""model"": ""naver/provence-reranker-debertav3-v1"", ""threshold"": 0.1}",-1,500,42,qwen2.5-7b-instruct,0.888,0.624,0.0,0.076,2874.1,627.0,4.58,211.7,6198.8,0.0314
+20261019-095409-llmlingua2,2026-10-19 09:56,598731c,e2e,pooled_bge-small-int8,llmlingua2,"{""model"": ""microsoft/llmlingua-2-xlm-roberta-large-meetingbank"", ""rate"": 0.25}",-1,500,42,qwen2.5-7b-instruct,0.686,0.364,0.0,0.0434,2874.1,825.5,3.48,469.7,8166.7,0.0413
