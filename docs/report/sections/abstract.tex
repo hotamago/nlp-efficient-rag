@@ -12,7 +12,7 @@ ghép cặp.
 Ở mức nén $\approx$4$\times$, chọn lọc theo câu bằng Provence giữ 91,6\% bằng chứng và đạt 64,0\%
 accuracy so với 65,3\% của ngữ cảnh đầy đủ (giảm 78\% token, không có ý nghĩa thống kê), trong khi xoá
 theo token (LLMLingua-2) làm accuracy rơi về mức không có ngữ cảnh. Khác với kết quả công bố trên
-GPT-3.5-Turbo, reader hiện đại gần như không còn hiện tượng \emph{lost in the middle} ở 3K token (chênh
+GPT-3.5-Turbo, reader 7B hiện đại gần như không còn hiện tượng \emph{lost in the middle} ở 3K token (chênh
 5,8 so với 21,6 điểm), nên nén không còn ``làm phẳng'' đường cong vị trí. Về truy hồi, một retriever
 dày đặc 33M tham số vượt BM25 21 điểm hit@5 và lượng tử int8 giảm chỉ mục 4$\times$ không mất chất
 lượng; ghép end-to-end, top-20 của retriever này cho accuracy ngang 20 tài liệu gốc (66,0\%). Toàn bộ

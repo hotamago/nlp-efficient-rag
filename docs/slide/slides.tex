@@ -382,7 +382,7 @@
         \item Truncate: 74,0 ở vị trí 1 (\textbf{+8,4}, bớt nhiễu) nhưng 19,6 ở vị trí 10/20.
       \end{itemize}
       \vfill
-      \takeaway{Reader hiện đại (ngữ cảnh 32K+) hầu như không còn ``lost in the middle'' ở 3K token.}
+      \takeaway{Reader 7B hiện đại (ngữ cảnh 32K+) hầu như không còn ``lost in the middle'' ở 3K token.}
     \end{column}
   \end{columns}
 \end{frame}
@@ -411,7 +411,7 @@
     \end{column}
     \begin{column}{0.5\textwidth}
       \scriptsize\textbf{\color{hustred}Không tái lập}: ``nén làm \emph{tăng} accuracy ở giữa''
-      (LongLLMLingua $+17{,}1$ $\to$ $+1{,}0$ n.s.) -- vì reader mới không còn lost in the middle.
+      (LongLLMLingua $+17{,}1$ $\to$ $+1{,}0$ n.s.) -- vì reader 7B mới không còn lost in the middle (reader 1.5B thì còn).
     \end{column}
   \end{columns}
 \end{frame}
@@ -589,8 +589,8 @@
       \begin{itemize}\setlength\itemsep{0.3em}
         \item \textbf{Chọn câu > chọn tài liệu > xoá token}: Provence 4,6$\times$, $-$1,3 điểm (n.s.);
         LLMLingua-2 4$\times$ về mức closed-book.
-        \item Reader mới gần như hết \emph{lost in the middle} $\Rightarrow$ lợi ích ``nén làm tăng
-        accuracy'' của GPT-3.5 không còn.
+        \item Reader 7B gần như hết \emph{lost in the middle} $\Rightarrow$ ``nén làm tăng accuracy'' chỉ còn
+        với reader nhỏ (1.5B: Provence +7,5 điểm).
         \item Không GPU vẫn làm được: nén trên CPU + reader qua API; dense nhỏ int8 cho truy hồi.
         \item Nén mềm: PISCO mất 9--17 điểm; mô hình 1.5B của nhóm không qua cổng $\Rightarrow$ chọn lọc văn bản vẫn tốt hơn.
       \end{itemize}}
