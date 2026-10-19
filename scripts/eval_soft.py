@@ -2,6 +2,7 @@
 
 Gate (Tevatron dev, k=20, not LITM): base closed-book vs base full-text vs soft memory.
     uv run python scripts/eval_soft.py gate --run data/soft/run1
+    uv run python scripts/eval_soft.py diag --run data/soft/run1   # locate the gate failure
 
 LITM NQ-20 (same 500 questions / positions as Track A); writes results/compression/ rows with
 llm_model "<base>+soft". Documents are encoded once per question and reused for every position
@@ -42,6 +43,26 @@ def gate(model: SoftRAG, run: str, n: int) -> None:
     res |= {"n": len(data), "pass": bool(ok)}
     print(json.dumps(res))
     (Path(run) / "gate.json").write_text(json.dumps(res))
+
+
+def diag(model: SoftRAG, run: str, n: int) -> None:
+    """Locate the gate failure on Tevatron dev: is the gold passage lost in its 8 memory vectors
+    (gold-only soft vs gold-only text), or among the 19 compressed negatives (hybrid, gold open)?"""
+    data = [json.loads(x) for x in open(DATA_DIR / "soft" / "dev.jsonl")][:n]
+    acc = {"soft_gold_only": [], "text_gold_only": [], "hybrid_gold_open": [], "soft_20": []}
+    for ex in tqdm(data, desc="diag"):
+        docs = [tuple(d) for d in ex["docs"]]
+        q, ans, g = ex["question"], ex["answers"], ex["gold"]
+        gold_open = [j == g for j in range(len(docs))]
+        acc["soft_gold_only"].append(best_subspan_em(model.generate(q, [docs[g]]), ans))
+        acc["text_gold_only"].append(best_subspan_em(model.generate(q, [docs[g]], base=True), ans))
+        acc["hybrid_gold_open"].append(
+            best_subspan_em(model.generate(q, docs, open_mask=gold_open), ans)
+        )
+        acc["soft_20"].append(best_subspan_em(model.generate(q, docs), ans))
+    res = {k: round(100 * float(np.mean(v)), 1) for k, v in acc.items()} | {"n": len(data)}
+    print(json.dumps(res))
+    (Path(run) / "diag.json").write_text(json.dumps(res))
 
 
 def litm(model: SoftRAG, run: str, variants: list[str], positions: list[int], n: int) -> None:
@@ -96,7 +117,7 @@ def litm(model: SoftRAG, run: str, variants: list[str], positions: list[int], n:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=["gate", "litm"])
+    ap.add_argument("mode", choices=["gate", "diag", "litm"])
     ap.add_argument("--run", default=str(DATA_DIR / "soft" / "run1"))
     ap.add_argument("--n", type=int, default=None)
     ap.add_argument("--variants", nargs="+", default=["soft", "hybrid"])
@@ -107,6 +128,8 @@ def main() -> None:
     with torch.inference_mode():
         if args.mode == "gate":
             gate(model, args.run, args.n or 200)
+        elif args.mode == "diag":
+            diag(model, args.run, args.n or 200)
         else:
             litm(model, args.run, args.variants, args.positions, args.n or 500)
 
