@@ -49,11 +49,13 @@ def diag(model: SoftRAG, run: str, n: int) -> None:
     """Locate the gate failure on Tevatron dev: is the gold passage lost in its 8 memory vectors
     (gold-only soft vs gold-only text), or among the 19 compressed negatives (hybrid, gold open)?"""
     data = [json.loads(x) for x in open(DATA_DIR / "soft" / "dev.jsonl")][:n]
-    acc = {"soft_gold_only": [], "text_gold_only": [], "hybrid_gold_open": [], "soft_20": []}
+    acc = {"closedbook_trained": [], "soft_gold_only": [], "text_gold_only": [],
+           "hybrid_gold_open": [], "soft_20": []}  # fmt: skip
     for ex in tqdm(data, desc="diag"):
         docs = [tuple(d) for d in ex["docs"]]
         q, ans, g = ex["question"], ex["answers"], ex["gold"]
         gold_open = [j == g for j in range(len(docs))]
+        acc["closedbook_trained"].append(best_subspan_em(model.generate(q, []), ans))
         acc["soft_gold_only"].append(best_subspan_em(model.generate(q, [docs[g]]), ans))
         acc["text_gold_only"].append(best_subspan_em(model.generate(q, [docs[g]], base=True), ans))
         acc["hybrid_gold_open"].append(
