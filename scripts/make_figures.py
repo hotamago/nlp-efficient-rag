@@ -424,6 +424,24 @@ def fig_pipeline() -> None:
     save(fig, "pipeline")
 
 
+def fig_soft_loss() -> None:
+    """Training loss of the encode-once soft compressor (results/soft/run1_train.jsonl)."""
+    f = RESULTS_DIR / "soft" / "run1_train.jsonl"
+    if not f.exists():
+        return
+    d = pd.read_json(f, lines=True)
+    d = d[d.step > 1]  # step 1 is a single batch, the rest are 10-step means
+    fig, ax = plt.subplots(figsize=(6.2, 2.8))
+    ax.plot(d.step, d.loss, color=C[0], lw=1, alpha=0.35)
+    ax.plot(d.step, d.loss.rolling(10, min_periods=1).mean(), color=C[0], lw=2)
+    ax.axvline(1000, color=GRAY, ls=":", lw=1.2)
+    ax.text(1015, ax.get_ylim()[1] * 0.95, "resume từ bước 1000", va="top", fontsize=8,
+            color=INK2)  # fmt: skip
+    ax.set_xlabel("Bước tối ưu (8 mẫu/bước)")
+    ax.set_ylabel("Loss (nats/token đáp án)")
+    save(fig, "soft_loss")
+
+
 def copy_tables_to_slides() -> None:
     """Slides are a separate Overleaf project, so they get their own copy of the tables."""
     import shutil
@@ -436,6 +454,7 @@ def copy_tables_to_slides() -> None:
 
 def main() -> None:
     fig_pipeline()
+    fig_soft_loss()
     t_rec = recall_table()
     print(t_rec.round(1).to_string())
     lat = latency_table()
