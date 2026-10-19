@@ -16,6 +16,24 @@ Quy tắc: tick `[x]` + 1 dòng kết quả chính khi xong (xem `AGENTS.md` §8
 - [x] BM25S trên corpus gộp (n=200): top-1/5/20 hit 0.19/0.51/0.90, 0.39 ms/query
 - [x] LLM client OpenAI-compatible + cache, schema kết quả, tests
 
+## 0b. Trạng thái cuối (19/10) và thay đổi so với kế hoạch
+
+Toàn bộ thí nghiệm đã xong. Số liệu nằm trong `results/`, báo cáo ở `docs/report/main.pdf` (28 trang),
+slide ở `docs/slide/slides.pdf` (18 trang), gói Overleaf tạo bằng `scripts/overleaf_zip.py`.
+
+- [x] Track A (reader Qwen2.5-7B-Instruct-AWQ, 500 câu × vị trí 1/10/20): Provence τ=0,1 đạt 64,0 so với
+  65,3 của full (4,6×, không có ý nghĩa); rerank top-5 62,7; LLMLingua-2 r=0,25 38,3 ≈ closed-book 38,8.
+  Chỉ đo 3 vị trí {0, 9, 19} thay vì 5 để tiết kiệm GPU.
+- [x] Track B: bge-small int8 hit@5 76,2 (chỉ mục 18,6 MB), BM25S 55,2. Qwen3-Embedding và ColBERT
+  không chạy (tốn GPU, bge-small đã đủ để rút ra kết luận).
+- [x] Track C: top-20 bge-small int8 → nén → reader 7B: full 66,0; rerank-5 63,0; Provence 62,4;
+  LLMLingua-2 36,4.
+- [x] CPU vs GPU: rerank 196/16 ms, Provence 4,9/0,2 s mỗi câu.
+- [x] Mở rộng ngoài kế hoạch ban đầu (đã thống nhất, T12/T16–T18): nén mềm. PISCO 48,2 so với 60,3
+  văn bản (Mistral-7B). Bộ nén encode-once tự huấn luyện (Qwen2.5-1.5B) không qua cổng dừng; chẩn
+  đoán: 8 vector/đoạn không giữ được đáp án. Phụ: reader 1.5B nhạy vị trí, Provence tăng 7,5 điểm.
+- Bỏ: A6 (RECOMP, Sentinel, EXIT, tiếng Việt), B3 NanoBEIR.
+
 ## 1. Ma trận thí nghiệm
 
 ### Track A – Nén ngữ cảnh (LITM NQ-20, n=500, seed 42, vị trí {0,4,9,14,19})

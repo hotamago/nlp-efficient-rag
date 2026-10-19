@@ -17,9 +17,6 @@ Chỉ sửa dòng task của mình (và thêm dòng mới ở cuối). Ngày the
 
 | ID | Task | Người nhận | Trạng thái | Phụ thuộc | Cập nhật / kết quả |
 |---|---|---|---|---|---|
-| T09 | Báo cáo LaTeX: viết abstract, results, conclusion, contribution, appendix (`docs/report/sections/`) | Sơn/Claude | doing | T08 | 18/10 17:30 – xong results (trừ nén mềm), CPU, conclusion (trừ RQ5), contribution, appendix; còn abstract + mục nén mềm |
-| T13 | Track C – end-to-end: retriever tốt nhất (T06: bge-small int8) top-20 → bộ nén tốt nhất (T03) → LLM trên corpus gộp | Sơn/Claude | doing | T03 | 19/10 09:50 – nhận |
-| T15 | Cập nhật `README.md`, `docs/plan.md` theo kết quả cuối | Sơn/Claude | doing | T09 | 18/10 – README có mục Kết quả chính (Track A/B, CPU); chờ số nén mềm |
 
 ## Đã xong
 
@@ -41,3 +38,6 @@ Chỉ sửa dòng task của mình (và thêm dòng mới ở cuối). Ngày the
 | T16 | P1 – tự huấn luyện nén mềm encode-once (Qwen2.5-1.5B, 2 LoRA, 8 vector/128 token, 15k mẫu Tevatron NQ) | Sơn/Claude | 1 epoch, loss 7,4 → ~1,2; checkpoint resume đầy đủ mỗi 100 bước. `results/soft/run1_train.jsonl`, `scripts/train_soft.py` |
 | T17 | Cổng dừng P1 (dev 200) | Sơn/Claude | KHÔNG đạt: soft 22,0 vs closed-book 19,0 / văn bản 42,0 → dừng P1. Chẩn đoán: chỉ đoạn vàng dạng 8 vector 23 vs văn bản 72; lai với đoạn vàng mở 70. `results/soft/{gate,diag}.json` |
 | T18 | Đánh giá P1 trên LITM 500×{1,10,20} + baseline reader 1.5B | Sơn/Claude | Soft 25,7 ≈ closed-book 26,2; lai 48,5 (5,5×) = rerank top-1 văn bản 49,2; full 45,3; Provence 52,8 (+7,5, có ý nghĩa: reader 1.5B nhạy vị trí). `tab:soft`, `sec:res-soft` |
+| T09 | Báo cáo LaTeX (`docs/report/`) | Sơn/Claude | 28 trang, biên dịch sạch (XeLaTeX/tectonic), đủ RQ1–RQ5, nén mềm, end-to-end; `docs/report/main.pdf` |
+| T13 | Track C – end-to-end: bge-small int8 top-20 (kho 50,7k) → nén → Qwen2.5-7B | Sơn/Claude | Recall top-20 95,4; acc full 66,0, rerank-5 63,0, Provence 62,4 (−3,0/−3,6, không có ý nghĩa), LLMLingua-2 36,4. `results/e2e/`, `tab:e2e`, `scripts/build_retrieved.py` |
+| T15 | Cập nhật `README.md`, `docs/plan.md` theo kết quả cuối | Sơn/Claude | README mục Kết quả chính (A/B/C, nén mềm, CPU); plan.md §0b trạng thái cuối |
