@@ -13,7 +13,9 @@
   điểm) nên nén không còn tác dụng ``làm phẳng'' như báo cáo cho GPT-3.5.
   \item[RQ2.] Ở quy mô 50,7k đoạn, retriever dày đặc nhỏ (bge-small, 33M tham số) vượt BM25 21 điểm
   hit@5; lượng tử int8 giảm chỉ mục 4$\times$ không mất chất lượng, nhị phân + rescore giảm 32$\times$
-  chỉ mất 2,8 điểm.
+  chỉ mất 2,8 điểm. Ghép thành pipeline end-to-end (top-20 bge-small int8 $\to$ nén $\to$ reader 7B),
+  accuracy đạt 66,0\%, ngang 20 tài liệu LITM; rerank top-5 hoặc Provence giảm 4$\times$ token chỉ
+  mất 3,0--3,6 điểm (không có ý nghĩa).
   \item[RQ3.] Tái lập được hai kết luận của các công bố: BM25 kém xa dense, và LLMLingua-2 dùng đơn lẻ
   ở 4$\times$ sụt mạnh ($-$21 đến $-$30 điểm so với $-$11 đến $-$27 được công bố). Không tái lập được
   kết luận ``nén làm tăng accuracy khi đoạn vàng ở giữa'' của LongLLMLingua ($+17{,}1$ điểm với GPT-3.5,

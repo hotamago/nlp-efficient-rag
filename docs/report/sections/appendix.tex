@@ -19,7 +19,13 @@ EFFRAG_DEVICE=cuda uv run python scripts/bench_device.py --n 20
 uv run python scripts/eval_pisco.py --n 500      # PISCO (Mistral-7B nf4)
 uv run python scripts/build_soft_train.py        # du lieu huan luyen nen mem
 uv run python scripts/train_soft.py --out data/soft/run1
+uv run python scripts/eval_soft.py gate --run data/soft/run1   # cong dung
+uv run python scripts/eval_soft.py diag --run data/soft/run1   # chan doan
 uv run python scripts/eval_soft.py litm --run data/soft/run1
+bash scripts/run_reader_1p5b.sh                  # dong van ban cua reader 1.5B (vLLM)
+uv run python scripts/build_retrieved.py         # Track C: top-20 bge-small int8
+uv run python scripts/run_compression.py --retriever bge-small-int8 --method provence \
+     --params '{"threshold": 0.1}'               # tuong tu: full, rerank_topk, llmlingua2
 uv run python scripts/make_figures.py            # bang + hinh cho bao cao/slide
 uv run python scripts/error_analysis.py
 uv run python app/demo.py                        # demo Gradio

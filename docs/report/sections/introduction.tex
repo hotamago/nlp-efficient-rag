@@ -61,7 +61,9 @@ Báo cáo trả lời năm câu hỏi:
   đúng giao thức này.
   \item Đánh giá nén mềm trên cùng giao thức: PISCO~\cite{louis2025pisco} (Mistral-7B) và một bộ nén
   encode-once do nhóm tự huấn luyện trên Qwen2.5-1.5B, có chế độ lai giữ đoạn quan trọng nhất ở dạng
-  văn bản.
+  văn bản; với một cổng dừng đặt trước và chẩn đoán chỉ ra vì sao mô hình nhỏ chưa thay được văn bản.
+  \item Một pipeline RAG end-to-end (retriever lượng tử int8 $\to$ bộ nén $\to$ reader) trên kho
+  50,7k đoạn, xác nhận các kết luận của bộ dữ liệu có kiểm soát trong điều kiện truy hồi thật.
   \item Phân tích đánh đổi độ chính xác -- token -- độ trễ và một demo tương tác (Gradio) minh hoạ
   trực quan phần ngữ cảnh mà mỗi phương pháp giữ lại.
 \end{itemize}

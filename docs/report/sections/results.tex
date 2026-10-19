@@ -315,6 +315,40 @@ Hệ thống & Hit@1 & Hit@5 & Hit@20 & MRR@10 & MB & ms (batch) & ms (1 câu) \
 \end{itemize}
 
 %------------------------------------------------------------------------------
+\subsection{RAG end-to-end}
+\label{sec:res-e2e}
+
+Các mục trên dùng 20 tài liệu có sẵn của LITM, trong đó đoạn vàng luôn có mặt. Để kiểm tra kết luận
+trong một pipeline thật, chúng tôi ghép retriever tốt nhất về chi phí (bge-small, chỉ mục int8 18,6\,MB)
+lấy top-20 đoạn trên kho 50,7k đoạn theo thứ tự xếp hạng, rồi nén và đọc bằng reader Qwen2.5-7B
+(cùng 500 câu, cùng prompt). Bảng~\ref{tab:e2e} cho kết quả.
+
+\begin{table}[t]
+\centering
+\caption{RAG end-to-end: bge-small int8 top-20 trên kho 50,7k đoạn $\to$ bộ nén $\to$ Qwen2.5-7B
+(500 câu). Recall: ngữ cảnh sau nén còn chứa đáp án (\%); $\Delta$: chênh accuracy so với top-20
+không nén, kèm khoảng tin cậy bootstrap 95\%.}
+\label{tab:e2e}
+\small
+\begin{tabular}{l r r r r l}
+\toprule
+Cấu hình & Recall & Acc & Token & Nén & $\Delta$ [KTC 95\%] \\
+\midrule
+\inputtable{tables/e2e.tex}
+\bottomrule
+\end{tabular}
+\end{table}
+
+Top-20 truy hồi chứa đáp án ở 95,4\% câu hỏi và cho 66,0\% accuracy, ngang với 20 tài liệu LITM
+(65,3\%): retriever 33M tham số với chỉ mục int8 không làm pipeline kém đi. Thứ tự giữa các bộ nén
+giữ nguyên như Bảng~\ref{tab:main}: rerank top-5 và Provence giảm token 4,1--4,6$\times$, chỉ mất
+3,0--3,6 điểm và không có ý nghĩa thống kê, còn LLMLingua-2 mất 29,6 điểm. Khác biệt duy nhất là
+Provence không còn hơn rerank (62,4 so với 63,0) dù giữ nhiều bằng chứng hơn (recall 88,8 so với
+82,2). Một giải thích khả dĩ là kho gộp chứa nhiều đoạn gần trùng nhau về chủ đề; Provence giữ lại
+câu liên quan từ nhiều đoạn, nên ngữ cảnh sau nén vụn và nhiễu hơn năm đoạn nguyên vẹn của rerank.
+Chúng tôi chưa kiểm chứng giả thuyết này.
+
+%------------------------------------------------------------------------------
 \subsection{Chạy không cần GPU}
 \label{sec:res-cpu}
 

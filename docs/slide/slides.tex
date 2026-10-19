@@ -124,7 +124,7 @@
         \item Giữ bằng chứng (không cần LLM)
         \item Độ chính xác -- token -- vị trí
         \item So với số liệu công bố
-        \item Nén mềm · truy hồi · CPU vs GPU
+        \item Nén mềm · truy hồi · end-to-end · CPU vs GPU
       \end{itemize}
       \vspace{0.6em}
       \textbf{\color{hustred}IV. Tổng kết}
@@ -499,6 +499,26 @@
       giảm 32$\times$ chỉ mất 2,8 điểm.}
     \end{column}
   \end{columns}
+\end{frame}
+
+%================================================================ 13b — END-TO-END
+\begin{frame}{Kết quả 7: RAG end-to-end (bge-small int8 top-20 $\to$ nén $\to$ Qwen2.5-7B)}
+  \begingroup\scriptsize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabularx}{\textwidth}{@{}X r r r r l@{}}
+  \toprule
+  \textbf{\color{hustred}Cấu hình} & \textbf{\color{hustred}Recall} & \textbf{\color{hustred}Acc} &
+  \textbf{\color{hustred}Token} & \textbf{\color{hustred}Nén} & \textbf{\color{hustred}$\Delta$ [KTC 95\%]} \\
+  \midrule
+  \inputtable{tables/e2e.tex}
+  \bottomrule
+  \end{tabularx}\endgroup
+  \vspace{0.8em}
+  \begin{itemize}\setlength\itemsep{0.3em}\small
+    \item Top-20 từ kho 50,7k đoạn chứa đáp án ở 95,4\% câu; accuracy 66,0\% ngang 20 tài liệu LITM (65,3\%).
+    \item Rerank top-5 / Provence: 4,1--4,6$\times$ ít token, mất 3,0--3,6 điểm (không có ý nghĩa); LLMLingua-2 mất 29,6 điểm.
+  \end{itemize}
+  \takeaway{Pipeline rẻ (chỉ mục 18,6 MB + bộ nén CPU) giữ gần nguyên chất lượng ở 1/4 số token.}
 \end{frame}
 
 %================================================================ 14 — CPU
