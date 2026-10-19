@@ -416,28 +416,58 @@
   \end{columns}
 \end{frame}
 
-%================================================================ 12 — SOFT RESULTS
-\begin{frame}{Kết quả 5: nén mềm (PISCO và mô hình của nhóm)}
+%================================================================ 12 — SOFT RESULTS (PISCO)
+\begin{frame}{Kết quả 5a: nén mềm bằng checkpoint công bố (PISCO)}
   \begin{columns}[T]
-    \begin{column}{0.6\textwidth}
+    \begin{column}{0.62\textwidth}
       \begingroup\scriptsize
-      \renewcommand{\arraystretch}{1.08}
+      \renewcommand{\arraystretch}{1.1}
       \setlength{\tabcolsep}{3pt}
       \begin{tabularx}{\linewidth}{@{}X r r r r r r@{}}
       \toprule
-      Cấu hình & @1 & @10 & @20 & TB & Token & Nén \\
+      Mistral-7B nf4 & @1 & @10 & @20 & TB & Token & Nén \\
       \midrule
-      \inputtable{tables/soft.tex}
+      \inputtable{tables/soft_pisco.tex}
       \end{tabularx}\endgroup\par\vspace{0.2em}
-      {\tiny Mỗi khối: cùng một reader, chỉ khác ngữ cảnh văn bản / vector. Rerank: chỉ vị trí 10.}
+      {\tiny Cùng reader, cùng prompt PISCO; chỉ khác ngữ cảnh văn bản / vector. Rerank: chỉ vị trí 10.}
     \end{column}
-    \begin{column}{0.37\textwidth}
+    \begin{column}{0.35\textwidth}
       \footnotesize
-      \begin{itemize}\setlength\itemsep{0.3em}
-        \item \textbf{PISCO}: 160 vector thay 2.875 token (18$\times$), TB 48,2\% so với 60,3\% văn bản cùng reader.
+      \begin{itemize}\setlength\itemsep{0.35em}
+        \item 160 vector thay 2.875 token (18$\times$): TB 48,2\% so với 60,3\% văn bản.
         \item Giảm 9 / 10 / 17 điểm ở vị trí 1 / 10 / 20, đều có ý nghĩa; tệ nhất khi đoạn vàng ở cuối.
         \item Rerank-5 $\to$ PISCO: 56,2\% với 40 vector (72$\times$), vẫn kém văn bản rerank-5 6,8 điểm.
-        \item \todo{Mô hình của nhóm: mềm / lai}
+        \item Cao hơn closed-book 12 điểm: vector \emph{có} mang thông tin, nhưng chưa đủ thay văn bản.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+%================================================================ 12b — SOFT RESULTS (OWN MODEL)
+\begin{frame}{Kết quả 5b: mô hình encode-once của nhóm (Qwen2.5-1.5B)}
+  \begin{columns}[T]
+    \begin{column}{0.62\textwidth}
+      \begingroup\scriptsize
+      \renewcommand{\arraystretch}{1.05}
+      \setlength{\tabcolsep}{3pt}
+      \begin{tabularx}{\linewidth}{@{}X r r r r r r@{}}
+      \toprule
+      Qwen2.5-1.5B & @1 & @10 & @20 & TB & Token & Nén \\
+      \midrule
+      \inputtable{tables/soft_own.tex}
+      \end{tabularx}\endgroup\par\vspace{0.2em}
+      {\tiny Cùng reader 1.5B; dòng văn bản qua vLLM, dòng nén mềm là mô hình của nhóm.}
+    \end{column}
+    \begin{column}{0.35\textwidth}
+      \scriptsize
+      \begin{itemize}\setlength\itemsep{0.3em}
+        \item Loss 7,4 $\to$ 1,2 nhưng \textbf{không qua cổng dừng} (dev: 22\% so với closed-book 19\%,
+        văn bản 42\%) $\Rightarrow$ dừng P1 như kế hoạch.
+        \item Chỉ vector nhớ: 25,7\% $\approx$ closed-book 26,2\% trên LITM.
+        \item Chẩn đoán: chỉ đoạn vàng dạng 8 vector 23\% so với dạng văn bản 72\% $\Rightarrow$ nút thắt
+        là nén \emph{từng đoạn}, không phải nhiễu.
+        \item Lai 48,5\% (5,5$\times$) = chỉ đọc top-1 văn bản 49,2\%: lợi ích đến từ đoạn được chọn.
+        \item Phụ: reader 1.5B nhạy vị trí $\Rightarrow$ Provence \textbf{tăng} 7,5 điểm (có ý nghĩa).
       \end{itemize}
     \end{column}
   \end{columns}
@@ -542,7 +572,7 @@
         \item Reader mới gần như hết \emph{lost in the middle} $\Rightarrow$ lợi ích ``nén làm tăng
         accuracy'' của GPT-3.5 không còn.
         \item Không GPU vẫn làm được: nén trên CPU + reader qua API; dense nhỏ int8 cho truy hồi.
-        % TODO(T18): one bullet on soft compression
+        \item Nén mềm: PISCO mất 9--17 điểm; mô hình 1.5B của nhóm không qua cổng $\Rightarrow$ chọn lọc văn bản vẫn tốt hơn.
       \end{itemize}}
     \end{column}
   \end{columns}

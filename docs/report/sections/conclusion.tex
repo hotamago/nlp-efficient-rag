@@ -18,11 +18,20 @@
   ở 4$\times$ sụt mạnh ($-$21 đến $-$30 điểm so với $-$11 đến $-$27 được công bố). Không tái lập được
   kết luận ``nén làm tăng accuracy khi đoạn vàng ở giữa'' của LongLLMLingua ($+17{,}1$ điểm với GPT-3.5,
   $+1{,}0$ không có ý nghĩa với Qwen2.5-7B): hiệu ứng đó phụ thuộc vào reader bị \emph{lost in the
-  middle}, điều không còn đúng với LLM mở thế hệ mới ở độ dài 3K token.
+  middle}, điều không còn đúng với LLM mở 7B thế hệ mới ở độ dài 3K token. Với reader nhỏ 1.5B vốn nhạy
+  vị trí, hiệu ứng này xuất hiện trở lại: Provence tăng accuracy có ý nghĩa ở cả ba vị trí
+  (Mục~\ref{sec:res-soft}).
   \item[RQ4.] Có. Bộ nén chạy trên CPU (rerank 0,2 s/câu, Provence 4,9 s/câu), reader gọi qua API;
   nén giảm 78\% token đầu vào và do đó giảm chi phí API tương ứng. GPU chỉ cần để rút ngắn độ trễ
   nén.
-  \item[RQ5.] % TODO(T18): fill with PISCO / own soft model numbers
+  \item[RQ5.] Chưa, ở quy mô của nhóm. Checkpoint công bố PISCO nén 18$\times$ nhưng mất 9--17 điểm so
+  với văn bản trên cùng reader Mistral-7B (48,2\% so với 60,3\%). Mô hình encode-once của nhóm
+  (Qwen2.5-1.5B, 15k mẫu, 1 epoch) không vượt cổng dừng đặt trước: chỉ dùng vector nhớ thì ngang
+  closed-book (25,7\% so với 26,2\% trên LITM), vì 8 vector không giữ được đáp án của từng đoạn (23\%
+  so với 72\% khi đọc đoạn vàng dạng văn bản). Biến thể lai đạt 48,5\% ở 5,5$\times$, nhưng đúng bằng
+  chỉ đọc đoạn top-1 dạng văn bản (49,2\%). Ngược lại, trên reader 1.5B nhạy với vị trí, nén
+  \emph{văn bản} bằng Provence tăng accuracy có ý nghĩa (+7,5 điểm trung bình). Với ngân sách nhỏ,
+  chọn lọc văn bản vẫn là lựa chọn tốt hơn nén mềm.
 \end{description}
 
 \subsection{Hạn chế}
@@ -34,8 +43,9 @@
   tháng); một phần lỗi trong Mục~\ref{sec:res-errors} thuộc loại này.
   \item LongLLMLingua chỉ chạy 200 câu ở một vị trí vì chi phí; các số liệu GPT-3.5 chỉ dùng để so
   sánh độ chênh, không so sánh tuyệt đối.
-  \item Mô hình nén mềm của nhóm được huấn luyện 1 epoch trên 15k mẫu với một GPU 12GB, nhỏ hơn nhiều
-  so với PISCO (huấn luyện trên hàng trăm nghìn mẫu).
+  \item Mô hình nén mềm của nhóm được huấn luyện 1 epoch trên 15k mẫu với một GPU 12GB, ít hơn nhiều
+  so với dữ liệu và tài nguyên của PISCO; kết luận thất bại chỉ đúng ở quy mô này (một epoch, 8
+  vector/đoạn, LLM 1.5B).
 \end{itemize}
 
 \subsection{Hướng phát triển}

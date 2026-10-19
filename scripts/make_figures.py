@@ -58,7 +58,7 @@ def label(method: str, params: str) -> str:
             return {"closedbook": "Closed-book", "oracle": "Oracle"}[p["docs"]]
         return f"PISCO 16× ({docs})" if method == "pisco" else f"Văn bản ({docs})"
     if method == "soft":
-        return f"Nén mềm 8 vector ({'lai top-1' if p['variant'] == 'hybrid' else '20 đoạn'})"
+        return f"Nén mềm ({'lai top-1' if p['variant'] == 'hybrid' else '20 đoạn'})"
     return {"full": "Full (20 docs)", "closedbook": "Closed-book", "oracle": "Oracle"}[method]
 
 
@@ -261,9 +261,9 @@ def significance(labels: list[str], base: str = BASE) -> pd.DataFrame:
     return pd.DataFrame(out)
 
 
-SOFT_BLOCKS = [
-    ("Mistral-7B-Instruct-v0.2 (nf4)", ["mistral-7b-nf4", "mistral-7b-nf4+pisco"]),
-    ("Qwen2.5-1.5B-Instruct", ["qwen2.5-1.5b-instruct", "qwen2.5-1.5b-instruct+soft"]),
+SOFT_BLOCKS = [  # (title, readers, file for the per-block copy used by the slides)
+    ("Mistral-7B-Instruct-v0.2 (nf4)", ["mistral-7b-nf4", "mistral-7b-nf4+pisco"], "soft_pisco"),
+    ("Qwen2.5-1.5B-Instruct", ["qwen2.5-1.5b-instruct", "qwen2.5-1.5b-instruct+soft"], "soft_own"),
 ]
 
 
@@ -274,7 +274,7 @@ def soft_table() -> pd.DataFrame | None:
     if df.empty:
         return None
     lines, out = [], []
-    for title, llms in SOFT_BLOCKS:
+    for title, llms, block_file in SOFT_BLOCKS:
         sub = df[df.llm_model.isin(llms)]
         if sub.empty:
             continue
@@ -286,11 +286,13 @@ def soft_table() -> pd.DataFrame | None:
                        ratio=g.ratio.mean(), soft=soft)  # fmt: skip
         t = t.sort_values(["soft", "Token"], ascending=[True, False])
         lines.append(f"\\multicolumn{{7}}{{l}}{{\\textit{{{title}}}}} \\\\")
+        start = len(lines)
         for name, r in t.iterrows():
             accs = " & ".join(fmt(r[p]) for p in POS)
             ratio = f"{r.ratio:.1f}$\\times$" if r.Token else "--"  # closed-book: no context
             lines.append(f"\\quad {tex_name(name)} & {accs} & {fmt(r.TB)} & {r.Token:.0f} & "
                          f"{ratio} \\\\")  # fmt: skip
+        (TAB / f"{block_file}.tex").write_text("\n".join(lines[start:] + ["\\bottomrule"]) + "\n")
         lines.append("\\midrule")
         out.append(t.assign(reader=title))
     lines[-1] = "\\bottomrule"

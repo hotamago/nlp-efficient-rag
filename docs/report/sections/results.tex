@@ -175,8 +175,9 @@ mỗi hệ} (Bảng~\ref{tab:published}) thay vì số tuyệt đối.
 
 \begin{table}[t]
 \centering
-\caption{Nén mềm so với văn bản trên \emph{cùng} một reader (accuracy \%, 500 câu/vị trí; rerank: chỉ
-vị trí 10). Token: số vector nhớ hoặc token văn bản đưa vào reader; Nén: so với 20 đoạn văn bản.}
+\caption{Nén mềm so với văn bản trên \emph{cùng} một reader (accuracy \%, 500 câu/vị trí; khối
+Mistral: rerank chỉ đo ở vị trí 10). Token: số vị trí đầu vào của ngữ cảnh (vector nhớ, cộng token
+tiêu đề với mô hình của nhóm); Nén: so với 20 đoạn văn bản.}
 \label{tab:soft}
 \small
 \begin{tabular}{l r r r r r r}
@@ -203,7 +204,71 @@ bản rerank top-5 trên cùng reader 6,8 điểm ($[-10,8;\,-2,8]$). Với văn
 so với 20 đoạn ($-$0,2 điểm), khớp với kết quả trên Qwen2.5-7B. Lưu ý thêm: Mistral-7B nf4 đọc văn bản kém Qwen2.5-7B (60,3 so với 65,3), nên chênh lệch được tính trên
 cùng reader chứ không so sánh chéo.
 
-% TODO(T09): own encode-once model (T16-T18)
+\paragraph{Mô hình encode-once của nhóm.} Huấn luyện 1 epoch (1.875 bước, khoảng 4 giờ GPU trên
+RTX 4070 SUPER, 5,3\,GB VRAM) hội tụ ổn định: loss trên token đáp án giảm từ 7,4 xuống khoảng 1,2
+(Hình~\ref{fig:soft-loss}). Tuy vậy, mô hình \textbf{không vượt cổng dừng} đặt trước
+(Mục~\ref{sec:soft}): trên 200 câu dev, nén mềm đạt 22,0\% so với 19,0\% closed-book và 42,0\% văn
+bản của Qwen2.5-1.5B gốc, trong khi cổng yêu cầu $\geq$29,0\% và $\geq$29,4\%. Theo kế hoạch, chúng
+tôi dừng P1 ở đây (không tinh chỉnh tiếp trên tập kiểm tra) và chỉ đo để phân tích.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.85\linewidth]{soft_loss.pdf}
+\caption{Loss huấn luyện của bộ nén mềm (trung bình 10 bước; đường đậm: trung bình trượt). Lần chạy
+được dừng để nhường GPU rồi tiếp tục từ trọng số ở bước 1000.}
+\label{fig:soft-loss}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{Chẩn đoán cổng dừng trên 200 câu dev Tevatron (20 đoạn, accuracy \%). ``Đã huấn luyện'':
+decoder có adapter; ``gốc'': Qwen2.5-1.5B-Instruct không adapter.}
+\label{tab:soft-diag}
+\small
+\begin{tabular}{l l r}
+\toprule
+Ngữ cảnh & Decoder & Acc \\
+\midrule
+Không có (closed-book) & gốc & 19,0 \\
+Không có (closed-book) & đã huấn luyện & 12,0 \\
+20 đoạn, tất cả là vector nhớ & đã huấn luyện & 22,0 \\
+Chỉ đoạn vàng, dạng vector nhớ & đã huấn luyện & 23,0 \\
+Chỉ đoạn vàng, dạng văn bản & gốc & 72,0 \\
+20 đoạn, đoạn vàng mở dạng văn bản, 19 đoạn nhớ & đã huấn luyện & 70,0 \\
+20 đoạn văn bản & gốc & 42,0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Bảng~\ref{tab:soft-diag} khoanh vùng nguyên nhân. (i) Nút thắt nằm ở \emph{từng} đoạn: chỉ đưa một
+đoạn vàng dưới dạng 8 vector nhớ cho 23,0\%, gần như bằng 20 đoạn (22,0\%) và kém xa chính đoạn đó
+dạng văn bản (72,0\%). Như vậy vấn đề không phải 19 đoạn nhiễu làm loãng, mà 8 vector không giữ được
+đáp án của một đoạn 128 token. (ii) Decoder đọc văn bản tốt và không bị vector nhớ của các đoạn nhiễu
+làm hỏng: mở đoạn vàng thành văn bản cho 70,0\%, gần bằng chỉ đọc đoạn vàng (72,0\%). (iii) Vector
+nhớ có mang \emph{một ít} thông tin: chúng nâng decoder đã huấn luyện từ 12,0\% (closed-book) lên
+22,0\%, và loss trên dev giảm từ 2,81 xuống 2,39 nat. Loss huấn luyện thấp (khoảng 1,2) chủ yếu đến
+từ các mẫu lai có đoạn vàng mở (loss 0,53, so với 1,74 ở mẫu chỉ có vector nhớ, đo lại trên mô hình
+đã lưu). Nói cách khác, với 15k mẫu và 1 epoch, mô hình học được cách \emph{đọc} văn bản trong prompt
+trộn trước khi học được cách \emph{nén}. Ngoài ra, closed-book của decoder đã huấn luyện tụt từ 19,0
+xuống 12,0\%: adapter học dựa vào ngữ cảnh thay vì kiến thức tham số.
+
+Trên LITM (Bảng~\ref{tab:soft}, khối Qwen2.5-1.5B), kết quả nhất quán với chẩn đoán. Biến thể chỉ
+dùng vector nhớ đạt 25,7\% trung bình, ngang closed-book của reader gốc (26,2\%; chênh $-$0,2 / 0,0 /
+$-$1,2 điểm, không có ý nghĩa). Biến thể lai đạt 48,5\% với 5,5$\times$, cao hơn 20 đoạn văn bản ở
+vị trí 20 (+9,0 điểm, $[4,2;\,13,8]$) nhưng thấp hơn ở vị trí 1 ($-$4,2, $[-9,0;\,0,6]$). Đối chứng
+quyết định là \emph{chỉ} đưa đoạn top-1 của cross-encoder dạng văn bản: 49,2\% ở mọi vị trí, không
+khác biến thể lai ($-$0,2 / $-$2,4 / +0,6 điểm, đều không có ý nghĩa). Toàn bộ lợi ích của biến thể
+lai đến từ đoạn văn bản được chọn, không phải từ 19 đoạn vector nhớ.
+
+\paragraph{Nén văn bản trên reader nhỏ.} Khối Qwen2.5-1.5B còn cho một kết quả phụ quan trọng. Khác
+reader 7B, reader 1.5B nhạy với vị trí rõ rệt (53,2 / 42,0 / 40,8, chênh 12,4 điểm; đoạn vàng càng xa đầu càng khó), và
+ở đây nén văn bản \emph{làm tăng} accuracy: Provence $\tau=0{,}1$ đạt 52,8\% trung bình so với 45,3\%
+của 20 đoạn (+5,6 / +9,6 / +7,2 điểm, cả ba có ý nghĩa), rerank top-5 tăng có ý nghĩa ở vị trí 20
+(+6,2). Đây chính là hiệu ứng mà LongLLMLingua báo cáo với GPT-3.5: lợi ích ``nén để chống nhiễu''
+không biến mất, mà phụ thuộc vào việc reader có bị nhiễu làm hỏng hay không. Lưu ý: các dòng văn bản
+của reader 1.5B chạy qua vLLM với prompt chuẩn (tối đa 100 token sinh), còn mô hình nén mềm sinh bằng
+transformers với cùng prompt nhưng tối đa 48 token; với câu trả lời NQ ngắn, khác biệt này không đáng
+kể.
 
 %------------------------------------------------------------------------------
 \subsection{Truy hồi hiệu quả}

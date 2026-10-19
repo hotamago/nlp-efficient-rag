@@ -16,7 +16,10 @@ GPT-3.5-Turbo, reader hiện đại gần như không còn hiện tượng \emph
 5,8 so với 21,6 điểm), nên nén không còn ``làm phẳng'' đường cong vị trí. Về truy hồi, một retriever
 dày đặc 33M tham số vượt BM25 21 điểm hit@5 và lượng tử int8 giảm chỉ mục 4$\times$ không mất chất
 lượng. Toàn bộ pipeline chạy được không cần GPU: bộ nén trên CPU (0,2--4,9 s/câu) và reader qua API.
-% TODO(T18): one sentence on PISCO / own encode-once soft compressor
+Nén mềm thành vector (PISCO, 18$\times$) mất 9--17 điểm so với văn bản trên cùng reader; bộ nén
+encode-once nhóm tự huấn luyện trên Qwen2.5-1.5B không vượt cổng dừng đặt trước, và chẩn đoán cho
+thấy 8 vector/đoạn không giữ được đáp án. Trên reader 1.5B nhạy với vị trí, nén văn bản bằng Provence
+lại tăng accuracy 7,5 điểm.
 Mã nguồn, kết quả từng câu và demo Gradio được công khai.
 
 \vspace{0.6em}

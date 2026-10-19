@@ -47,8 +47,8 @@ không nén trên NQ (Mistral-7B, 5 đoạn). \textbf{OSCAR}~\cite{louis2025osca
 \emph{có điều kiện câu hỏi} bằng một mô hình 1B, đồng thời xếp hạng lại. \textbf{CLaRa}~\cite{he2025clara}
 dùng chung biểu diễn nén cho cả truy hồi lẫn sinh. \textbf{REFRAG}~\cite{lin2025refrag} đưa embedding các
 khối văn bản thẳng vào bộ giải mã và dùng học tăng cường để quyết định khối nào được ``mở'' thành văn
-bản. Các phương pháp này đều huấn luyện trên hàng trăm nghìn câu hỏi bằng GPU A100, gắn với một LLM tự
-host cụ thể và \emph{không} dùng được qua API thương mại.
+bản. Các phương pháp này cần dữ liệu và tài nguyên huấn luyện lớn (cụm GPU trung tâm dữ liệu), gắn với một
+LLM tự host cụ thể và \emph{không} dùng được qua API thương mại.
 
 \paragraph{Bộ chọn lọc và bộ nhớ trong kiến trúc LLM.} Các mô hình DeepSeek gần đây tách phần ``tìm
 gì để nhìn'' khỏi phần tính toán chính. \textbf{DeepSeek-V3.2}~\cite{deepseek2025v32} thêm \emph{lightning
