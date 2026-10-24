@@ -3,9 +3,8 @@
 #  - closed-book / oracle do not depend on the gold position -> 1 position only;
 #  - document-level / sentence-level / LLMLingua-2 compressors are position-invariant, so the
 #    compression is computed once and reused for gold positions 1/10/20 (only the LLM call differs);
-#  - truncate-2x and BM25/dense top-k are reported with LLM-free context recall plus the published
-#    GPT-3.5 numbers instead of extra LLM runs;
-#  - LongLLMLingua (the most expensive compressor) runs on 200 questions at the middle position.
+#  - BM25/dense top-5 and LongLLMLingua were first run at the middle position only (LongLLMLingua on
+#    200 questions) and later completed to all three positions with n=500.
 # Pass --dry-run to only compress (fills the cache). Extra args are forwarded to run_compression.py.
 # One config at a time; GPU for the compressors, vLLM for generation.
 set -u
@@ -16,8 +15,8 @@ CONFIGS=(
   "oracle|{}|--positions 0"
   "full|{}|$P3"
   "truncate|{\"budget\": 730}|$P3"
-  "bm25_topk|{\"k\": 5}|--positions 9"
-  "dense_topk|{\"k\": 5}|--positions 9"
+  "bm25_topk|{\"k\": 5}|$P3"
+  "dense_topk|{\"k\": 5}|$P3"
   "rerank_topk|{\"k\": 10}|$P3"
   "rerank_topk|{\"k\": 5}|$P3"
   "llmlingua2|{\"rate\": 0.5}|$P3"
@@ -26,7 +25,7 @@ CONFIGS=(
   "provence|{\"threshold\": 0.01}|$P3"
   "provence|{\"threshold\": 0.1}|$P3"
   "provence|{\"threshold\": 0.1, \"model\": \"$OP\"}|$P3"
-  "longllmlingua|{\"target_token\": 730}|--positions 9 --n 200"
+  "longllmlingua|{\"target_token\": 730}|$P3"
 )
 mkdir -p data/logs
 for spec in "${CONFIGS[@]}"; do

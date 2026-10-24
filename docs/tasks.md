@@ -17,6 +17,7 @@ Chỉ sửa dòng task của mình (và thêm dòng mới ở cuối). Ngày the
 
 | ID | Task | Người nhận | Trạng thái | Phụ thuộc | Cập nhật / kết quả |
 |---|---|---|---|---|---|
+| T20 | Bổ sung ô thiếu: BM25/Dense top-5 vị trí 1/20, LongLLMLingua n=500 × 3 vị trí, PISCO/Mistral rerank-5 vị trí 1/20; cập nhật báo cáo/slide | Sơn/Claude | doing | – | 24/10 23:50 – vLLM tạm trên vpn-02-clo (RTX 3080), khớp 59/60 câu kiểm tra với lần chạy gốc. BM25 top-5 47,6/45,4/45,8; Dense top-5 57,4/56,0/56,4 |
 
 ## Đã xong
 
