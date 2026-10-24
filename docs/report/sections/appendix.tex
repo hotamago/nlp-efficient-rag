@@ -5,31 +5,36 @@ Mọi số liệu trong báo cáo được sinh từ các tệp \texttt{results/
 lại bằng một lệnh. Các bước dưới đây chạy trên một GPU 12GB; mọi bộ nén cũng chạy được trên CPU
 (\texttt{EFFRAG\_DEVICE=cpu}).
 
-\begin{lstlisting}[language=bash]
-uv sync && cp .env.example .env                 # LLM_BASE_URL, LLM_MODEL
-uv run python scripts/download_data.py           # LITM NQ-Open 20 tai lieu
-# reader (vLLM, 4-bit AWQ)
-vllm serve Qwen/Qwen2.5-7B-Instruct-AWQ --served-model-name qwen2.5-7b-instruct \
-     --max-model-len 4096 --seed 0
-bash scripts/run_all_compression.sh --dry-run    # chi nen: recall, ti le nen
-bash scripts/run_all_compression.sh              # goi LLM (co cache theo hash prompt)
-uv run python scripts/run_retrieval.py           # Track B
+\begin{lstlisting}[language=bash,basicstyle=\ttfamily\scriptsize]
+uv sync && cp .env.example .env    # set LLM_BASE_URL, LLM_MODEL
+uv run python scripts/download_data.py
+# reader: Qwen2.5-7B-Instruct, 4-bit AWQ
+vllm serve Qwen/Qwen2.5-7B-Instruct-AWQ --seed 0 \
+     --served-model-name qwen2.5-7b-instruct --max-model-len 4096
+# Track A: compression on LITM
+bash scripts/run_all_compression.sh --dry-run   # no LLM
+bash scripts/run_all_compression.sh             # cached
+bash scripts/run_reader_1p5b.sh                 # 1.5B reader
 EFFRAG_DEVICE=cpu  uv run python scripts/bench_device.py --n 20
 EFFRAG_DEVICE=cuda uv run python scripts/bench_device.py --n 20
-uv run python scripts/eval_pisco.py --n 500      # PISCO (Mistral-7B nf4)
-uv run python scripts/build_soft_train.py        # du lieu huan luyen nen mem
+# Track B: retrieval
+uv run python scripts/run_retrieval.py
+# soft compression
+uv run python scripts/eval_pisco.py --n 500     # PISCO
+uv run python scripts/build_soft_train.py
 uv run python scripts/train_soft.py --out data/soft/run1
-uv run python scripts/eval_soft.py gate --run data/soft/run1   # cong dung
-uv run python scripts/eval_soft.py diag --run data/soft/run1   # chan doan
+uv run python scripts/eval_soft.py gate --run data/soft/run1
+uv run python scripts/eval_soft.py diag --run data/soft/run1
 uv run python scripts/eval_soft.py litm --run data/soft/run1
-bash scripts/run_reader_1p5b.sh                  # dong van ban cua reader 1.5B (vLLM)
-uv run python scripts/build_retrieved.py         # Track C: top-20 bge-small int8
-uv run python scripts/run_compression.py --retriever bge-small-int8 --method provence \
-     --params '{"threshold": 0.1}'               # tuong tu: full, rerank_topk, llmlingua2
-uv run python scripts/make_figures.py            # bang + hinh cho bao cao/slide
+# end-to-end (also: full, rerank_topk, llmlingua2)
+uv run python scripts/build_retrieved.py
+uv run python scripts/run_compression.py --retriever bge-small-int8 \
+     --method provence --params '{"threshold": 0.1}'
+# tables, figures, demo
+uv run python scripts/make_figures.py
 uv run python scripts/error_analysis.py
-uv run python app/demo.py                        # demo Gradio
-uv run python scripts/overleaf_zip.py            # zip bao cao/slide cho Overleaf (XeLaTeX)
+uv run python app/demo.py
+uv run python scripts/overleaf_zip.py           # Overleaf zips
 \end{lstlisting}
 
 \section{Prompt}
@@ -54,12 +59,13 @@ Closed-book dùng \texttt{Question: \{question\}\textbackslash nAnswer:}. PISCO 
 mô hình (chỉ dẫn hệ thống gộp vào lượt \texttt{user} vì Mistral không có vai trò \texttt{system});
 hàng ``văn bản'' của PISCO dùng đúng prompt đó với tài liệu dạng văn bản để so sánh cùng điều kiện.
 
+\clearpage
 \section{Siêu tham số mô hình nén mềm}
 \label{app:soft-hparams}
 
-\begin{table}[h]
+\noindent\begin{minipage}{\linewidth}
 \centering
-\caption{Siêu tham số huấn luyện bộ nén mềm encode-once của nhóm.}
+\captionof{table}{Siêu tham số huấn luyện bộ nén mềm encode-once của nhóm.}
 \label{tab:soft-hparams}
 \small
 \begin{tabularx}{\linewidth}{l X}
@@ -68,14 +74,14 @@ Tham số & Giá trị \\
 \midrule
 Mô hình nền & \nolinkurl{Qwen/Qwen2.5-1.5B-Instruct} (bf16) \\
 Adapter & 2 LoRA (encoder, decoder), $r=16$, $\alpha=32$, dropout 0,05, mọi lớp tuyến tính \\
-Vector nhớ / tài liệu & 8 (tài liệu cắt ở 128 token, tức nén 16$\times$) \\
-Chiếu encoder $\to$ decoder & bỏ 8 kênh massive activation, tuyến tính khởi tạo đơn vị,
+Vector nhớ / đoạn & 8 (tài liệu cắt ở 128 token, tức nén 16$\times$) \\
+Chiếu encoder $\to$ decoder & bỏ 8 kênh massive activation, chiếu tuyến tính khởi tạo identity,
   chuẩn hoá L2, nhân hệ số học được \\
-Dữ liệu & 15.000 câu NQ (Tevatron), $k\in\{5,10,20\}$ đoạn, âm tính khó BM25 \\
-Chế độ lai & 50\% mẫu giữ 1 đoạn dạng văn bản (đoạn vàng với xác suất 0,6) \\
-Tối ưu & AdamW, lr $10^{-4}$, warmup 50 bước, cosine, clip 1,0 \\
-Batch & 8 mẫu/bước (tích luỹ gradient), 1 epoch $\approx$ 1.875 bước \\
+Dữ liệu & 15.000 câu NQ (Tevatron), $k\in\{5,10,20\}$ đoạn, hard negative từ BM25 \\
+Chế độ hybrid & 50\% mẫu giữ 1 đoạn dạng văn bản (đoạn vàng với xác suất 0,6) \\
+Optimizer & AdamW, lr $10^{-4}$, warmup 50 bước, cosine, clip 1,0 \\
+Batch & 8 mẫu/bước (gradient accumulation), 1 epoch $\approx$ 1.875 bước \\
 Bộ nhớ & gradient checkpointing; $\approx$5GB VRAM \\
 \bottomrule
 \end{tabularx}
-\end{table}
+\end{minipage}

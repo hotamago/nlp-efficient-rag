@@ -11,7 +11,7 @@
   closed-book (38,3\% so với 38,8\%): phân tích lỗi cho thấy phần lớn thiệt hại đến từ văn bản bị xé
   vụn chứ không phải mất đáp án. Với reader hiện đại, đường cong vị trí vốn đã gần phẳng (chênh 5,8
   điểm) nên nén không còn tác dụng ``làm phẳng'' như báo cáo cho GPT-3.5.
-  \item[RQ2.] Ở quy mô 50,7k đoạn, retriever dày đặc nhỏ (bge-small, 33M tham số) vượt BM25 21 điểm
+  \item[RQ2.] Ở quy mô 50,7k đoạn, dense retriever nhỏ (bge-small, 33M tham số) vượt BM25 21 điểm
   hit@5; lượng tử int8 giảm chỉ mục 4$\times$ không mất chất lượng, nhị phân + rescore giảm 32$\times$
   chỉ mất 2,8 điểm. Ghép thành pipeline end-to-end (top-20 bge-small int8 $\to$ nén $\to$ reader 7B),
   accuracy đạt 66,0\%, ngang 20 tài liệu LITM; rerank top-5 hoặc Provence giảm 4$\times$ token chỉ
@@ -28,9 +28,9 @@
   nén.
   \item[RQ5.] Chưa, ở quy mô của nhóm. Checkpoint công bố PISCO nén 18$\times$ nhưng mất 9--17 điểm so
   với văn bản trên cùng reader Mistral-7B (48,2\% so với 60,3\%). Mô hình encode-once của nhóm
-  (Qwen2.5-1.5B, 15k mẫu, 1 epoch) không vượt cổng dừng đặt trước: chỉ dùng vector nhớ thì ngang
+  (Qwen2.5-1.5B, 15k mẫu, 1 epoch) không vượt cổng go/no-go đặt trước: chỉ dùng vector nhớ thì ngang
   closed-book (25,7\% so với 26,2\% trên LITM), vì 8 vector không giữ được đáp án của từng đoạn (23\%
-  so với 72\% khi đọc đoạn vàng dạng văn bản). Biến thể lai đạt 48,5\% ở 5,5$\times$, nhưng đúng bằng
+  so với 72\% khi đọc đoạn vàng dạng văn bản). Biến thể hybrid đạt 48,5\% ở 5,5$\times$, nhưng đúng bằng
   chỉ đọc đoạn top-1 dạng văn bản (49,2\%). Ngược lại, trên reader 1.5B nhạy với vị trí, nén
   \emph{văn bản} bằng Provence tăng accuracy có ý nghĩa (+7,5 điểm trung bình). Với ngân sách nhỏ,
   chọn lọc văn bản vẫn là lựa chọn tốt hơn nén mềm.

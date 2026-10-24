@@ -17,7 +17,7 @@ Python 3.11 và quản lý môi trường bằng \texttt{uv} (khoá phiên bản
   \item \texttt{generation.py}: client tương thích OpenAI, có cache theo hash của prompt và thử lại
   khi lỗi; cùng một mã chạy được với API thương mại, vLLM hoặc Ollama.
   \item \texttt{metrics.py}, \texttt{tokens.py}, \texttt{results.py}: chỉ số, bộ đếm token chung và
-  lược đồ kết quả (CSV/JSONL) dùng chung cho cả nhóm.
+  schema kết quả (CSV/JSONL) dùng chung cho cả nhóm.
   \item \nolinkurl{scripts/}: chạy thí nghiệm (\texttt{run\_compression.py}, \texttt{run\_retrieval.py},
   \nolinkurl{run_all_compression.sh}), vẽ hình (\texttt{make\_figures.py}); \nolinkurl{app/demo.py}: demo Gradio.
 \end{itemize}
@@ -32,20 +32,29 @@ class MyPruner(DocwiseCompressor):
 
 \subsection{Thư viện, mô hình và dữ liệu sử dụng}
 
-\begin{table}[h]
+\begin{table}[!ht]
 \centering
 \caption{Thành phần có sẵn được sử dụng.}
 \label{tab:libs}
 \small
-\begin{tabularx}{\linewidth}{l X}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{@{}l X@{}}
 \toprule
 Thành phần & Phiên bản / nguồn \\
 \midrule
-Dữ liệu & NQ-Open multi-document QA, 20 tài liệu~\cite{liu2024lost} (\nolinkurl{nelson-liu/lost-in-the-middle}) \\
-LLM sinh câu trả lời & \nolinkurl{Qwen/Qwen2.5-7B-Instruct-AWQ}~\cite{qwen2025qwen25,lin2024awq}, phục vụ bằng vLLM 0.31~\cite{kwon2023vllm} \\
-Nén token & \texttt{llmlingua} 0.2.2; \nolinkurl{microsoft/llmlingua-2-xlm-roberta-large-meetingbank}; \nolinkurl{Qwen/Qwen2.5-0.5B-Instruct} \\
-Nén câu & \nolinkurl{naver/provence-reranker-debertav3-v1}; \nolinkurl{hotchpotch/open-provence-reranker-v1-gte-modernbert-base} \\
-Truy hồi & \texttt{bm25s} 0.3, \texttt{faiss-cpu} 1.15, \texttt{sentence-transformers} 5.7; \nolinkurl{BAAI/bge-small-en-v1.5}, \nolinkurl{static-retrieval-mrl-en-v1}, \nolinkurl{cross-encoder/ms-marco-MiniLM-L6-v2} \\
+Dữ liệu & NQ-Open multi-document QA, 20 đoạn~\cite{liu2024lost}:
+  \texttt{\footnotesize nelson-liu/lost-in-the-middle} \\
+Reader (LLM) & \texttt{\footnotesize Qwen/Qwen2.5-7B-Instruct-AWQ}~\cite{qwen2025qwen25,lin2024awq},
+  phục vụ bằng vLLM 0.31~\cite{kwon2023vllm} \\
+Nén mức token & \texttt{llmlingua} 0.2.2;\newline
+  \texttt{\footnotesize microsoft/llmlingua-2-xlm-roberta-large-meetingbank};\newline
+  \texttt{\footnotesize Qwen/Qwen2.5-0.5B-Instruct} (LongLLMLingua) \\
+Nén mức câu & \texttt{\footnotesize naver/provence-reranker-debertav3-v1};\newline
+  \texttt{\footnotesize hotchpotch/open-provence-reranker-v1-gte-modernbert-base} \\
+Truy hồi & \texttt{bm25s} 0.3, \texttt{faiss-cpu} 1.15, \texttt{sentence-transformers} 5.7;\newline
+  \texttt{\footnotesize BAAI/bge-small-en-v1.5};\newline
+  \texttt{\footnotesize sentence-transformers/static-retrieval-mrl-en-v1};\newline
+  \texttt{\footnotesize cross-encoder/ms-marco-MiniLM-L6-v2} (reranker) \\
 Nền tảng & PyTorch 2.14, Transformers 4.57, tiktoken 0.14, Gradio 6 \\
 \bottomrule
 \end{tabularx}
@@ -56,14 +65,17 @@ Nền tảng & PyTorch 2.14, Transformers 4.57, tiktoken 0.14, Gradio 6 \\
 \begin{itemize}
   \item \textbf{Phần cứng}: 1 GPU NVIDIA RTX 4070 SUPER 12GB, CPU 20 luồng (mặc định 4 luồng cho mỗi
   tiến trình, 8 luồng khi đo độ trễ CPU), 24GB RAM, WSL2.
-  \item \textbf{Sinh câu trả lời}: Qwen2.5-7B-Instruct (lượng tử AWQ 4-bit), \texttt{temperature}=0,
+  \item \textbf{Reader}: Qwen2.5-7B-Instruct (lượng tử AWQ 4-bit), \texttt{temperature}=0,
   tối đa 100 token sinh (như \citet{liu2024lost}), độ dài ngữ cảnh tối đa 4.096 token.
   \item \textbf{Lấy mẫu}: 500 câu hỏi, seed 42, 3 vị trí đoạn vàng $\{1,10,20\}$.
   \item \textbf{Ngân sách nén}: tương ứng 2$\times$ ($\approx$1.450 token) và 4$\times$ ($\approx$730 token)
   so với $\approx$2.900 token của ngữ cảnh đầy đủ -- cùng hai mức của bảng kết quả LongLLMLingua.
-  \item \textbf{LongLLMLingua}: \nolinkurl{condition_compare=True}, \nolinkurl{condition_in_question="after"},
-  \nolinkurl{rank_method="longllmlingua"}, \nolinkurl{dynamic_context_compression_ratio=0.4},
-  \nolinkurl{context_budget="+100"}, \nolinkurl{reorder_context="original"}.
+  \item \textbf{LongLLMLingua} (tham số của \texttt{llmlingua}):
+\begin{lstlisting}[language=Python,basicstyle=\ttfamily\footnotesize,aboveskip=0.4em,belowskip=0.2em]
+rank_method="longllmlingua", condition_compare=True,
+condition_in_question="after", context_budget="+100",
+dynamic_context_compression_ratio=0.4, reorder_context="original"
+\end{lstlisting}
   \item \textbf{LLMLingua-2}: \texttt{rate}$\in\{0{,}5; 0{,}25\}$, giữ bắt buộc ký tự xuống dòng, ``?'' và ``.''.
 \end{itemize}
 
@@ -91,7 +103,7 @@ qua vLLM.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{demo.png}
+\includegraphics[width=0.82\linewidth]{demo.png}
 \caption{Tab ``So sánh bộ nén'' của demo (câu hỏi \#3, đoạn vàng ở vị trí 10, chạy trên CPU).
 LLMLingua-2 và Provence đều giữ được đáp án; với Provence, reader 7B trả lời bằng tên diễn viên
 (Cristin Milioti) thay vì tên nhân vật -- một kiểu lỗi được phân tích ở Mục~\ref{sec:res-errors}.}

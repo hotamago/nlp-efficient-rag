@@ -12,7 +12,7 @@ sót bằng chứng, hệ thống thường lấy $k$ khá lớn (10--20 đoạn
   \item \textbf{Chi phí và độ trễ.} Prompt dài hàng nghìn token; chi phí API và thời gian xử lý
   prompt (prefill) tăng tuyến tính (thậm chí bậc hai với attention) theo độ dài ngữ cảnh.
   \item \textbf{Nhiễu.} Phần lớn các đoạn truy hồi không chứa đáp án; chúng có thể đánh lạc hướng LLM.
-  \item \textbf{Thiên lệch vị trí.} \citet{liu2024lost} chỉ ra hiện tượng \emph{Lost in the Middle}:
+  \item \textbf{Thiên lệch vị trí.} \citet{liu2024lost} chỉ ra hiện tượng \emph{lost in the middle}:
   độ chính xác của LLM cao khi đoạn chứa đáp án nằm ở đầu hoặc cuối prompt, nhưng giảm mạnh khi nó
   nằm ở giữa (đường cong hình chữ U).
 \end{enumerate}
@@ -46,7 +46,7 @@ Báo cáo trả lời năm câu hỏi:
   int8/binary, HNSW) đánh đổi chất lượng -- tốc độ -- bộ nhớ thế nào?
   \item[RQ3.] Kết quả của nhóm so với các công bố trên cùng bộ dữ liệu ra sao?
   \item[RQ4.] Không có GPU thì pipeline nén + truy hồi có còn dùng được không?
-  \item[RQ5.] Nén mềm ``mã hoá một lần'' (mỗi tài liệu thành vài vector, tính trước offline) có thay
+  \item[RQ5.] Nén mềm \emph{encode-once} (mỗi đoạn được mã hoá một lần, offline, thành vài vector) có thay
   được văn bản khi đọc bằng LLM nhỏ không?
 \end{description}
 
@@ -60,13 +60,59 @@ Báo cáo trả lời năm câu hỏi:
   quả theo từng vị trí. Theo khảo sát của nhóm, chưa có công bố nào đánh giá họ pruner Provence trên
   đúng giao thức này.
   \item Đánh giá nén mềm trên cùng giao thức: PISCO~\cite{louis2025pisco} (Mistral-7B) và một bộ nén
-  encode-once do nhóm tự huấn luyện trên Qwen2.5-1.5B, có chế độ lai giữ đoạn quan trọng nhất ở dạng
-  văn bản; với một cổng dừng đặt trước và chẩn đoán chỉ ra vì sao mô hình nhỏ chưa thay được văn bản.
+  encode-once do nhóm tự huấn luyện trên Qwen2.5-1.5B, có biến thể hybrid giữ đoạn quan trọng nhất ở dạng
+  văn bản; với một cổng go/no-go đặt trước và chẩn đoán chỉ ra vì sao mô hình nhỏ chưa thay được văn bản.
   \item Một pipeline RAG end-to-end (retriever lượng tử int8 $\to$ bộ nén $\to$ reader) trên kho
   50,7k đoạn, xác nhận các kết luận của bộ dữ liệu có kiểm soát trong điều kiện truy hồi thật.
   \item Phân tích đánh đổi độ chính xác -- token -- độ trễ và một demo tương tác (Gradio) minh hoạ
   trực quan phần ngữ cảnh mà mỗi phương pháp giữ lại.
 \end{itemize}
+
+\subsection{Quy ước thuật ngữ}
+\label{sec:terms}
+
+Báo cáo giữ nguyên tiếng Anh cho các thuật ngữ đã thành tên gọi chuẩn trong tài liệu về RAG và khó
+dịch mà không mất nghĩa (reader, retriever, rerank, embedding, token, prompt, accuracy, context
+recall). Các khái niệm phổ thông dùng tiếng Việt (nén ngữ cảnh, truy hồi, chỉ mục, lượng tử hoá, độ
+trễ). Bảng~\ref{tab:glossary} nêu nghĩa của các thuật ngữ dùng xuyên suốt báo cáo.
+
+\begin{table}[!ht]
+\centering
+\caption{Thuật ngữ và ký hiệu dùng trong báo cáo.}
+\label{tab:glossary}
+\small
+\renewcommand{\arraystretch}{1.12}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.27\linewidth} X@{}}
+\toprule
+Thuật ngữ & Nghĩa trong báo cáo \\
+\midrule
+Reader & LLM đọc ngữ cảnh và sinh câu trả lời (thí nghiệm chính: Qwen2.5-7B-Instruct). \\
+Retriever, rerank & Retriever tìm các đoạn liên quan trong kho; rerank chấm điểm lại các đoạn đã có
+  bằng một cross-encoder (reranker) để giữ $k$ đoạn tốt nhất. \\
+Dense retriever, embedding & Truy hồi bằng vector embedding của câu hỏi và đoạn văn (bge-small),
+  khác BM25 vốn dựa trên trùng khớp từ vựng. \\
+Đoạn vàng (gold passage) & Đoạn duy nhất chứa đáp án trong 20 đoạn; vị trí của nó (1, 10, 20) là
+  biến của thí nghiệm. \\
+Full, Closed-book, Oracle & Đưa đủ 20 đoạn / không đưa đoạn nào / chỉ đưa đoạn vàng vào prompt. \\
+Accuracy & Tỉ lệ câu hỏi có output chứa một đáp án chuẩn (best-subspan EM của \citet{liu2024lost}). \\
+Context recall & Tỉ lệ câu hỏi mà đáp án còn nằm trong ngữ cảnh sau nén; đo được không cần LLM. \\
+Tỉ lệ nén & Số token ngữ cảnh gốc chia cho số token sau nén (tiktoken \texttt{o200k\_base}). \\
+Nén cứng / nén mềm & Hard / soft compression: đầu ra là văn bản (dùng được với mọi LLM) / là vector
+  đưa thẳng vào LLM. \\
+Pruning & Cắt bỏ phần không liên quan của ngữ cảnh ở mức câu hoặc đoạn (Provence). \\
+Vector nhớ (memory slot) & Vector do bộ nén mềm sinh ra để thay cho nội dung một đoạn. \\
+Encode-once, hybrid & Mỗi đoạn được mã hoá một lần, offline, độc lập với câu hỏi; biến thể hybrid
+  giữ đoạn xếp hạng cao nhất ở dạng văn bản, các đoạn còn lại ở dạng vector nhớ. \\
+Cổng go/no-go & Điều kiện đặt trước trên tập dev: đạt thì đánh giá tiếp, không đạt thì dừng và
+  phân tích nguyên nhân. \\
+Lost in the middle & Hiện tượng LLM dùng kém thông tin nằm giữa ngữ cảnh (đường cong chữ U theo vị
+  trí đoạn vàng). \\
+Paired bootstrap, CI & Kiểm định chênh lệch giữa hai cấu hình trên cùng tập câu hỏi; CI là khoảng tin
+  cậy 95\%. ``Có ý nghĩa'' nghĩa là CI không chứa 0. \\
+Lượng tử hoá int8 / binary & Lưu mỗi chiều của embedding bằng 8 bit / 1 bit thay vì 32 bit. \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
 Phần còn lại của báo cáo: Mục~\ref{sec:related} tổng quan nghiên cứu liên quan; Mục~\ref{sec:method}
 mô tả phương pháp; Mục~\ref{sec:impl} trình bày cài đặt; Mục~\ref{sec:results} phân tích kết quả;

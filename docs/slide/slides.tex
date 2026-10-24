@@ -160,7 +160,7 @@
         \textbf{RQ2.} Truy hồi hiệu quả: đánh đổi chất lượng -- tốc độ -- bộ nhớ?\\[0.3em]
         \textbf{RQ3.} Kết luận của bài báo (GPT-3.5) còn đúng với LLM mở 7B?\\[0.3em]
         \textbf{RQ4.} Không có GPU thì có làm được không?\\[0.3em]
-        \textbf{RQ5.} Nén mềm ``mã hoá một lần'' (vector) có thay được văn bản?
+        \textbf{RQ5.} Nén mềm \emph{encode-once} (mỗi đoạn $\to$ vài vector) có thay được văn bản?
       \end{block}
     \end{column}
   \end{columns}
@@ -180,7 +180,7 @@
     \end{column}
     \begin{column}{0.5\textwidth}
       \scriptsize
-      \textbf{\color{hustred}Sinh câu trả lời} Qwen2.5-7B-Instruct-AWQ trên vLLM (GPU 12 GB),
+      \textbf{\color{hustred}Reader} Qwen2.5-7B-Instruct-AWQ trên vLLM (GPU 12 GB),
       \texttt{temperature=0}, prompt gốc của Lost in the Middle; cache theo hash prompt
       $\Rightarrow$ chạy lại không tốn chi phí.
     \end{column}
@@ -203,8 +203,9 @@
       {\footnotesize
       \begin{itemize}\setlength\itemsep{0.2em}
         \item Accuracy = đáp án chuẩn hoá nằm trong output (best-subspan EM).
-        \item \textbf{Recall bằng chứng}: đáp án còn trong ngữ cảnh sau nén (không cần LLM).
+        \item \textbf{Context recall}: đáp án còn trong ngữ cảnh sau nén (không cần LLM).
         \item Token (tiktoken \texttt{o200k\_base}), tỉ lệ nén, độ trễ nén.
+        \item So sánh: paired bootstrap, CI 95\%; \textbf{n.s.} = không có ý nghĩa thống kê.
       \end{itemize}}
     \end{column}
     \begin{column}{0.5\textwidth}
@@ -212,7 +213,7 @@
         \footnotesize
         \begin{itemize}\setlength\itemsep{0.2em}
           \item \textbf{Dry-run} mọi bộ nén trước (miễn phí) $\to$ chỉ gọi LLM cho cấu hình đáng chạy.
-          \item Bộ nén theo \emph{từng đoạn} được \textbf{memo hoá} qua các vị trí.
+          \item Bộ nén xử lý \emph{từng đoạn} $\Rightarrow$ \textbf{cache} kết quả, dùng lại cho cả 3 vị trí.
           \item Dùng \textbf{số liệu đã công bố} làm tham chiếu thay vì chạy lại.
           \item Tham chiếu bất biến theo vị trí (closed-book, oracle) chạy 1 lần.
           \item Một job GPU nặng tại một thời điểm; mọi model chạy được trên CPU.
@@ -223,23 +224,23 @@
 \end{frame}
 
 %================================================================ 6 — METHODS
-\begin{frame}{Các phương pháp nén cứng được so sánh}
+\begin{frame}{Các phương pháp nén được so sánh}
   \begingroup\scriptsize
   \renewcommand{\arraystretch}{1.15}
-  \begin{tabularx}{\textwidth}{@{}l l X l@{}}
+  \begin{tabularx}{\textwidth}{@{}l l >{\raggedright\arraybackslash}X l@{}}
   \toprule
   \textbf{\color{hustred}Mức} & \textbf{\color{hustred}Phương pháp} &
   \textbf{\color{hustred}Ý tưởng} & \textbf{\color{hustred}Nguồn} \\
   \midrule
   Prompt   & Truncate        & cắt đầu ngữ cảnh theo ngân sách token & baseline \\
   Tài liệu & BM25 / Dense / Rerank top-$k$ & chấm điểm đoạn theo câu hỏi, giữ $k$ đoạn, \emph{giữ thứ tự gốc} & bm25s, bge-small, MiniLM CE \\
-  Token    & LLMLingua-2     & phân loại giữ/bỏ từng token (XLM-R, chưng cất từ GPT-4) & arXiv 2403.12968 \\
+  Token    & LLMLingua-2     & phân loại giữ/bỏ từng token (XLM-R, distill từ nhãn GPT-4) & arXiv 2403.12968 \\
            & LongLLMLingua   & perplexity có điều kiện câu hỏi, ngân sách theo đoạn & arXiv 2310.06839 \\
            & Rerank-10 $\to$ LLMLingua-2 & lọc đoạn rồi nén token & LLMLingua-2 Tab.~4 \\
-  Câu      & Provence        & cắt tỉa câu theo câu hỏi, gộp với reranker (DeBERTa) & arXiv 2501.16214 \\
+  Câu      & Provence        & pruning câu theo câu hỏi, chung model với reranker (DeBERTa) & arXiv 2501.16214 \\
            & OpenProvence    & bản mở, ModernBERT, đa ngôn ngữ & hotchpotch (2025) \\
   \midrule
-  Vector   & PISCO           & mỗi đoạn $\to$ 8 vector bộ nhớ (16$\times$), Mistral-7B & arXiv 2501.16075 \\
+  Vector   & PISCO           & mỗi đoạn $\to$ 8 vector nhớ (16$\times$), Mistral-7B & arXiv 2501.16075 \\
            & \textbf{Nén mềm encode-once} & \textbf{đề xuất của nhóm} (slide sau) & -- \\
   \bottomrule
   \end{tabularx}\endgroup
@@ -257,20 +258,27 @@
       \begin{tikzpicture}[
         every node/.style={font=\scriptsize},
         box/.style={draw=hustred,fill=hustred!7,rounded corners=2pt,thick,align=center,
-                    minimum height=7mm,inner sep=3pt},
-        mem/.style={draw=hustdark,fill=hustred!35,minimum width=2.2mm,minimum height=5mm,inner sep=0pt},
-        a/.style={-{Stealth[length=2mm]},hustred,thick}]
-        \node[box,minimum width=26mm] (d) {Đoạn văn $\le$128 token\\(chạy \textbf{một lần}, offline)};
-        \node[box,right=8mm of d,minimum width=20mm] (enc) {Encoder\\LoRA$_{enc}$};
+                    minimum height=9mm,inner sep=3pt},
+        mem/.style={draw=hustdark,fill=hustred!35,minimum width=2.4mm,minimum height=6mm,inner sep=0pt},
+        a/.style={-{Stealth[length=2mm]},hustred,thick},
+        lab/.style={font=\tiny\itshape,text=hustdark,align=center}]
+        % offline row
+        \node[box,minimum width=24mm] (d) at (0,0) {Đoạn văn\\$\le$128 token};
+        \node[box,minimum width=22mm] (enc) at (3.4,0) {Encoder\\(LLM + LoRA$_\mathrm{enc}$)};
+        \foreach \i in {0,...,7} \node[mem] (m\i) at (5.6+\i*0.3,0) {};
+        \node[lab,above=1mm of m3,xshift=1.5mm] {8 vector nhớ / đoạn};
         \draw[a] (d) -- (enc);
-        \foreach \i in {0,...,7} \node[mem] (m\i) at ($(enc.east)+(6mm+\i*2.6mm,0)$) {};
-        \node[above=0.5mm of m3,xshift=1.3mm,font=\tiny] {8 vector};
         \draw[a] (enc) -- (m0);
-        \node[box,below=10mm of enc,minimum width=46mm,xshift=8mm] (dec)
-          {Decoder (cùng LLM) + LoRA$_{dec}$\\ câu hỏi + \emph{vector} (+ 1 đoạn text) $\to$ đáp án};
-        \draw[a] (m4.south) |- (dec.east);
-        \node[box,left=5mm of dec,minimum width=16mm] (q) {Câu hỏi};
+        \node[lab,anchor=south west] at (-1.2,0.75) {\textbf{Offline}: mã hoá cả kho một lần};
+        \draw[hustred!40,dashed] (-1.3,-0.85) -- (8.2,-0.85);
+        % online row
+        \node[lab,anchor=north west] at (-1.2,-0.95) {\textbf{Lúc hỏi}};
+        \node[box,minimum width=24mm] (q) at (0,-2.1) {Câu hỏi\\(+ đoạn top-1 văn bản\\nếu hybrid)};
+        \node[box,minimum width=30mm] (dec) at (4.1,-2.1) {Decoder\\(LLM + LoRA$_\mathrm{dec}$)};
+        \node[box,minimum width=14mm,fill=goodgreen!12,draw=goodgreen] (ans) at (7.3,-2.1) {Đáp án};
         \draw[a] (q) -- (dec);
+        \draw[a] (m3.south) -- ++(0,-0.45) -| ([xshift=8mm]dec.north);
+        \draw[a] (dec) -- (ans);
       \end{tikzpicture}}
       \vspace{0.6em}
       {\scriptsize
@@ -278,7 +286,7 @@
         \item Qwen2.5-1.5B-Instruct, 2 adapter LoRA (r=16) trên \emph{một} model.
         \item 15k câu Tevatron NQ-train (loại câu trùng test), vị trí vàng ngẫu nhiên,
           $k\in\{5,10,20\}$.
-        \item \textbf{Biến thể lai}: đoạn top-1 của reranker giữ dạng text
+        \item \textbf{Biến thể hybrid}: đoạn top-1 của reranker giữ dạng văn bản
           (tương tự \emph{lightning indexer} của DeepSeek-V3.2: một bộ chấm nhẹ chọn phần
           được xem đầy đủ).
       \end{itemize}}
@@ -290,13 +298,13 @@
         $\approx$2.900 token).
       \end{block}
       \vspace{0.3em}
-      \begin{block}{\small Cổng dừng (21/10)}
+      \begin{block}{\small Cổng go/no-go (đặt trước khi chạy)}
         \scriptsize 200 câu dev: tiếp tục nếu acc $\ge$ closed-book + 10 điểm và
-        $\ge$ 70\% full-text cùng reader; nếu không $\Rightarrow$ báo cáo phân tích thất bại.
+        $\ge$ 70\% accuracy văn bản đầy đủ; không đạt $\Rightarrow$ dừng, báo cáo phân tích.
       \end{block}
       \vspace{0.3em}
       {\scriptsize\color{hustdark} Đối chứng: PISCO (Naver) huấn luyện trên $>$450k mẫu, 7B;
-      nhóm thử ở quy mô BTL (15k mẫu, 1.5B, 1 GPU 12 GB).}
+      nhóm thử ở quy mô BTL (15k mẫu, 1.5B, 1 GPU 12 GB).\par}
     \end{column}
   \end{columns}
 \end{frame}
@@ -310,7 +318,7 @@
       \begin{tabularx}{\textwidth}{@{}X r r r@{}}
       \toprule
       \textbf{\color{hustred}Bộ nén} & \textbf{\color{hustred}Token} &
-      \textbf{\color{hustred}Nén} & \textbf{\color{hustred}Recall} \\
+      \textbf{\color{hustred}Tỉ lệ} & \textbf{\color{hustred}Recall} \\
       \midrule
       Truncate 730           & 730  & 3,9$\times$ & 100 / 16 / 16$^\dagger$ \\
       BM25 top-5             & 705  & 4,1$\times$ & 53,2 \\
@@ -327,7 +335,7 @@
       \bottomrule
       \end{tabularx}}\\[0.3em]
       {\tiny $^\dagger$ Truncate: recall ở vị trí 1 / 10 / 20 (cắt mất các đoạn phía sau).
-      Các bộ nén khác không phụ thuộc vị trí. $^\ddagger$ n=200, vị trí 10.}
+      Các bộ nén khác không phụ thuộc vị trí. $^\ddagger$ n=200, vị trí 10.\par}
     \end{column}
     \begin{column}{0.42\textwidth}
       \small
@@ -335,10 +343,10 @@
         \item Cùng $\approx$4$\times$, \textbf{Provence giữ 91,6\%} bằng chứng, hơn
           rerank top-5 12 điểm, hơn LLMLingua-2 24 điểm.
         \item Nén mức \emph{câu} theo câu hỏi giữ ngữ nghĩa tốt hơn bỏ token rời rạc.
-        \item BM25 trong 20 đoạn đã là hard negative $\Rightarrow$ chỉ 53\%.
+        \item 19 đoạn nhiễu vốn là hard negative trùng từ với câu hỏi $\Rightarrow$ BM25 chỉ 53\%.
       \end{itemize}
       \vfill
-      \takeaway{Recall là trần trên của accuracy sau nén, đo được miễn phí trên CPU.}
+      \takeaway{Context recall là cận trên của accuracy sau nén, đo được miễn phí trên CPU.}
     \end{column}
   \end{columns}
 \end{frame}
@@ -356,7 +364,7 @@
         \item Full 20 đoạn: \textbf{65,3}\% (TB 3 vị trí); closed-book 38,8; oracle 92,6.
         \item \textbf{Provence $\tau$=0,1}: 621 token (4,6$\times$), \best{64,0}\% -- không giảm có ý
           nghĩa ở vị trí nào (bootstrap 95\%).
-        \item Rerank top-5 (4,1$\times$): 62,7\%; giảm $-6{,}0$ điểm ở vị trí 20.
+        \item Rerank top-5 (4,1$\times$): 62,7\%; giảm 6,0 điểm ở vị trí 20 (có ý nghĩa).
         \item \textbf{LLMLingua-2} $r$=0,25: 38,3\% $\approx$ closed-book, dù recall còn 68\%.
       \end{itemize}
       \vfill
@@ -402,7 +410,7 @@
   \bottomrule
   \end{tabularx}\endgroup\par\vspace{0.3em}
   {\tiny Hàng đầu: accuracy tuyệt đối của ngữ cảnh đầy đủ; các hàng sau: chênh lệch (điểm) so với ngữ
-  cảnh đầy đủ của chính hệ đó. LongLLMLingua: so cặp 193 câu.}
+  cảnh đầy đủ của chính hệ đó. LongLLMLingua: so cặp 193 câu.\par}
   \vfill
   \begin{columns}[T]
     \begin{column}{0.5\textwidth}
@@ -425,7 +433,7 @@
       \setlength{\tabcolsep}{3pt}
       \begin{tabularx}{\linewidth}{@{}X r r r r r r@{}}
       \toprule
-      Mistral-7B nf4 & @1 & @10 & @20 & TB & Token & Nén \\
+      Mistral-7B nf4 & @1 & @10 & @20 & TB & Token & Tỉ lệ \\
       \midrule
       \inputtable{tables/soft_pisco.tex}
       \end{tabularx}\endgroup\par\vspace{0.2em}
@@ -452,29 +460,43 @@
       \setlength{\tabcolsep}{3pt}
       \begin{tabularx}{\linewidth}{@{}X r r r r r r@{}}
       \toprule
-      Qwen2.5-1.5B & @1 & @10 & @20 & TB & Token & Nén \\
+      Qwen2.5-1.5B & @1 & @10 & @20 & TB & Token & Tỉ lệ \\
       \midrule
       \inputtable{tables/soft_own.tex}
       \end{tabularx}\endgroup\par\vspace{0.2em}
-      {\tiny Cùng reader 1.5B; dòng văn bản qua vLLM, dòng nén mềm là mô hình của nhóm.}
+      {\tiny Cùng reader 1.5B; dòng văn bản chạy qua vLLM, dòng nén mềm là mô hình của nhóm.\par}
+      \vspace{0.5em}
+      \begingroup\scriptsize
+      \renewcommand{\arraystretch}{1.05}
+      \setlength{\tabcolsep}{3pt}
+      \begin{tabularx}{\linewidth}{@{}X r@{}}
+      \toprule
+      \textbf{\color{hustred}Chẩn đoán} trên 200 câu dev & Acc \\
+      \midrule
+      Chỉ đoạn vàng, dạng 8 vector nhớ (mô hình nhóm) & 23,0 \\
+      Chỉ đoạn vàng, dạng văn bản (Qwen2.5-1.5B gốc) & 72,0 \\
+      Đoạn vàng dạng văn bản + 19 đoạn vector nhớ & 70,0 \\
+      Closed-book (gốc $\to$ đã huấn luyện) & 19,0 $\to$ 12,0 \\
+      \bottomrule
+      \end{tabularx}\endgroup
     \end{column}
     \begin{column}{0.35\textwidth}
       \scriptsize
-      \begin{itemize}\setlength\itemsep{0.3em}
-        \item Loss 7,4 $\to$ 1,2 nhưng \textbf{không qua cổng dừng} (dev: 22\% so với closed-book 19\%,
-        văn bản 42\%) $\Rightarrow$ dừng P1 như kế hoạch.
-        \item Chỉ vector nhớ: 25,7\% $\approx$ closed-book 26,2\% trên LITM.
-        \item Chẩn đoán: chỉ đoạn vàng dạng 8 vector 23\% so với dạng văn bản 72\% $\Rightarrow$ nút thắt
-        là nén \emph{từng đoạn}, không phải nhiễu.
-        \item Lai 48,5\% (5,5$\times$) = chỉ đọc top-1 văn bản 49,2\%: lợi ích đến từ đoạn được chọn.
-        \item Phụ: reader 1.5B nhạy vị trí $\Rightarrow$ Provence \textbf{tăng} 7,5 điểm (có ý nghĩa).
+      \begin{itemize}\setlength\itemsep{0.45em}
+        \item Loss 7,4 $\to$ 1,2 nhưng \textbf{không qua cổng go/no-go} (dev: 22\% so với
+        closed-book 19\%, văn bản 42\%) $\Rightarrow$ dừng, chỉ đo để phân tích.
+        \item Chỉ dùng vector nhớ: 25,7\% $\approx$ closed-book 26,2\% trên LITM.
+        \item \textbf{Nút thắt}: 8 vector không giữ được đáp án của \emph{một} đoạn (23 so với 72),
+        không phải do 19 đoạn nhiễu (70).
+        \item Hybrid 48,5\% $\approx$ chỉ đọc top-1 dạng văn bản 49,2\%: lợi ích đến từ đoạn được chọn.
+        \item Phụ: reader 1.5B nhạy vị trí $\Rightarrow$ Provence \textbf{+7,5} điểm (có ý nghĩa ở cả 3 vị trí).
       \end{itemize}
     \end{column}
   \end{columns}
 \end{frame}
 
 %================================================================ 13 — RETRIEVAL
-\begin{frame}{Kết quả 6: truy hồi hiệu quả (corpus gộp 50,7k đoạn, 500 câu)}
+\begin{frame}{Kết quả 6: truy hồi hiệu quả (kho gộp 50,7k đoạn, 500 câu)}
   \begin{columns}[T]
     \begin{column}{0.55\textwidth}
       \centering
@@ -488,14 +510,14 @@
       \textbf{\color{hustred}Hệ thống} & \textbf{\color{hustred}hit@5} & \textbf{\color{hustred}Chỉ mục} \\
       \midrule
       BM25S                 & 55,2 & -- \\
-      Static embedding 256d & 55,8 & 49,5 MB \\
+      Static 256d (MRL) & 55,8 & 49,5 MB \\
       bge-small fp32        & 76,2 & 74,3 MB \\
       bge-small \textbf{int8} & \best{76,2} & \textbf{18,6 MB} \\
-      binary + rescore      & 73,4 & \textbf{2,3 MB} \\
+      bge-small binary + rescore & 73,4 & \textbf{2,3 MB} \\
       \bottomrule
-      \end{tabularx}}
+      \end{tabularx}\par}
       \vspace{0.6em}
-      \takeaway{Lượng tử hoá int8 giảm 4$\times$ bộ nhớ không mất điểm; binary + rescore
+      \takeaway{Lượng tử hoá int8 giảm 4$\times$ kích thước chỉ mục không mất điểm; binary + rescore
       giảm 32$\times$ chỉ mất 2,8 điểm.}
     \end{column}
   \end{columns}
@@ -508,7 +530,7 @@
   \begin{tabularx}{\textwidth}{@{}X r r r r l@{}}
   \toprule
   \textbf{\color{hustred}Cấu hình} & \textbf{\color{hustred}Recall} & \textbf{\color{hustred}Acc} &
-  \textbf{\color{hustred}Token} & \textbf{\color{hustred}Nén} & \textbf{\color{hustred}$\Delta$ [KTC 95\%]} \\
+  \textbf{\color{hustred}Token} & \textbf{\color{hustred}Tỉ lệ} & \textbf{\color{hustred}$\Delta$ [CI 95\%]} \\
   \midrule
   \inputtable{tables/e2e.tex}
   \bottomrule
@@ -522,14 +544,14 @@
 \end{frame}
 
 %================================================================ 14 — CPU
-\begin{frame}{Kết quả 7: không có GPU thì sao?}
+\begin{frame}{Kết quả 8: không có GPU thì sao?}
   \begin{columns}[T]
     \begin{column}{0.55\textwidth}
       \begingroup\scriptsize
       \renewcommand{\arraystretch}{1.1}
       \begin{tabularx}{\linewidth}{@{}X r r r@{}}
       \toprule
-      Bộ nén & GPU & CPU & $\times$ \\
+      Bộ nén & GPU (ms) & CPU (ms) & CPU/GPU \\
       \midrule
       \inputtable{tables/latency.tex}
       \bottomrule
@@ -555,7 +577,8 @@
   \begin{columns}[T]
     \begin{column}{0.52\textwidth}
       \centering
-      \includegraphics[width=\textwidth]{demo.png}
+      \includegraphics[width=\textwidth,trim=0 330 0 0,clip]{demo.png}\\[0.2em]
+      {\tiny Tab ``So sánh bộ nén'': chọn câu hỏi, vị trí đoạn vàng và các bộ nén.\par}
     \end{column}
     \begin{column}{0.46\textwidth}
       \centering
@@ -592,7 +615,7 @@
         \item Reader 7B gần như hết \emph{lost in the middle} $\Rightarrow$ ``nén làm tăng accuracy'' chỉ còn
         với reader nhỏ (1.5B: Provence +7,5 điểm).
         \item Không GPU vẫn làm được: nén trên CPU + reader qua API; dense nhỏ int8 cho truy hồi.
-        \item Nén mềm: PISCO mất 9--17 điểm; mô hình 1.5B của nhóm không qua cổng $\Rightarrow$ chọn lọc văn bản vẫn tốt hơn.
+        \item Nén mềm: PISCO mất 9--17 điểm; mô hình 1.5B của nhóm không qua cổng go/no-go $\Rightarrow$ chọn lọc văn bản vẫn tốt hơn.
       \end{itemize}}
     \end{column}
   \end{columns}

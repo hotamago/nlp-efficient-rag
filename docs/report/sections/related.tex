@@ -14,9 +14,9 @@ mở rộng ý tưởng với cơ chế phân bổ ngân sách theo phần của
 token-level compression) dùng perplexity của một LM nhỏ. \textbf{LongLLMLingua}~\cite{jiang2024longllmlingua}
 thích nghi LLMLingua cho ngữ cảnh dài và RAG: (i) xếp hạng tài liệu theo perplexity có điều kiện
 câu hỏi (coarse-grained), (ii) phân bổ tỉ lệ nén động theo thứ hạng, (iii) sắp xếp lại tài liệu để
-giảm hiện tượng lost-in-the-middle. Trên bộ NQ 20 tài liệu, LongLLMLingua tăng độ chính xác của
+giảm hiện tượng \emph{lost in the middle}. Trên bộ NQ 20 tài liệu, LongLLMLingua tăng độ chính xác của
 GPT-3.5-Turbo lên tới 17,1 điểm khi nén 4 lần. \textbf{LLMLingua-2}~\cite{pan2024llmlingua2} chuyển bài
-toán thành phân loại token (giữ/bỏ) bằng một bộ mã hoá hai chiều (XLM-RoBERTa-large) được chưng cất
+toán thành phân loại token (giữ/bỏ) bằng một encoder hai chiều (XLM-RoBERTa-large) được chưng cất (distillation)
 từ nhãn do GPT-4 sinh ra trên MeetingBank; nhanh hơn 3--6 lần LLMLingua nhưng \emph{không} dùng câu
 hỏi (task-agnostic).
 
@@ -25,7 +25,7 @@ hỏi (task-agnostic).
 \textbf{RECOMP}~\cite{xu2024recomp} huấn luyện bộ nén trích xuất (chọn câu) và bộ nén tóm tắt cho RAG.
 \textbf{CompAct}~\cite{yoon2024compact} nén tích cực nhiều vòng bằng LLM 7B; \textbf{EXIT}~\cite{hwang2025exit}
 phân loại câu có xét ngữ cảnh bằng Gemma-2B. \textbf{Provence}~\cite{chirkova2025provence} (ICLR 2025)
-huấn luyện một cross-encoder DeBERTa-v3 vừa \emph{xếp hạng lại} đoạn văn vừa \emph{gắn nhãn câu} cần
+huấn luyện một cross-encoder DeBERTa-v3 vừa \emph{rerank} đoạn văn vừa \emph{gắn nhãn câu} cần
 giữ trong một lượt suy luận, nên chi phí nén gần như bằng không nếu pipeline đã có bước rerank;
 ngưỡng xác suất quyết định mức nén. Các biến thể mới gồm \textbf{XProvence}~\cite{xprovence2026}
 (đa ngôn ngữ, ECIR 2026) và \textbf{OpenProvence}~\cite{openprovence} (mã nguồn và dữ liệu mở, giấy
@@ -36,15 +36,15 @@ dựa trên attention của một LM 0,5B.
 \subsection{Nén mềm, bộ nhớ ngữ cảnh và KV-cache}
 
 Nén mềm biểu diễn ngữ cảnh bằng \emph{vector} trong không gian embedding của LLM thay cho văn bản.
-\textbf{ICAE}~\cite{ge2024icae} huấn luyện một bộ tự mã hoá: LLM có LoRA đọc ngữ cảnh rồi xuất ra vài
+\textbf{ICAE}~\cite{ge2024icae} huấn luyện một autoencoder: LLM có LoRA đọc ngữ cảnh rồi xuất ra vài
 ``memory slot'' mà LLM gốc giải mã được. \textbf{xRAG}~\cite{cheng2024xrag} chiếu embedding truy hồi
 thành \emph{một} token mềm cho mỗi tài liệu và giữ nguyên LLM. \textbf{COCOM}~\cite{rau2025cocom} nén mỗi
 đoạn thành vài \emph{context embedding} và cho thấy việc fine-tune bộ giải mã là then chốt: với tỉ lệ
 128$\times$, giữ nguyên bộ giải mã chỉ đạt 0,421 EM trên NQ so với 0,519 khi fine-tune.
 \textbf{PISCO}~\cite{louis2025pisco} dùng chính LLM (hai adapter LoRA) làm cả bộ nén lẫn bộ giải mã,
-huấn luyện bằng chưng cất từ câu trả lời của mô hình thầy; ở tỉ lệ 16$\times$ đạt 0,65 so với 0,69
+huấn luyện bằng chưng cất từ câu trả lời của mô hình teacher; ở tỉ lệ 16$\times$ đạt 0,65 so với 0,69
 không nén trên NQ (Mistral-7B, 5 đoạn). \textbf{OSCAR}~\cite{louis2025oscar} chuyển sang nén
-\emph{có điều kiện câu hỏi} bằng một mô hình 1B, đồng thời xếp hạng lại. \textbf{CLaRa}~\cite{he2025clara}
+\emph{có điều kiện câu hỏi} bằng một mô hình 1B, đồng thời rerank. \textbf{CLaRa}~\cite{he2025clara}
 dùng chung biểu diễn nén cho cả truy hồi lẫn sinh. \textbf{REFRAG}~\cite{lin2025refrag} đưa embedding các
 khối văn bản thẳng vào bộ giải mã và dùng học tăng cường để quyết định khối nào được ``mở'' thành văn
 bản. Các phương pháp này cần dữ liệu và tài nguyên huấn luyện lớn (cụm GPU trung tâm dữ liệu), gắn với một
@@ -56,20 +56,19 @@ indexer}: một mạng chấm điểm nhỏ có trọng số riêng, được hu
 mô hình chính, chọn top-$k$ token cho mỗi truy vấn (DeepSeek Sparse Attention).
 \textbf{DeepSeek-V4}~\cite{deepseek2026v4} kết hợp hai loại attention: một loại nén mỗi nhóm token thành
 một mục KV rồi để indexer chọn top-$k$ mục, một loại nén mạnh hơn và nhìn toàn bộ.
-\textbf{DeepSeek-V4.1-Flash}~\cite{deepseek2026v41flash} thêm cấu trúc encoder--decoder nhân quả, trong đó
+\textbf{DeepSeek-V4.1-Flash}~\cite{deepseek2026v41flash} thêm cấu trúc encoder--decoder (causal), trong đó
 KV toàn cục của decoder được chiếu từ tầng giữa của encoder. \textbf{Engram}~\cite{cheng2026engram} là bộ
 nhớ tham số tra cứu theo n-gram, đóng vai trò ``tri thức tĩnh''. Ở cấp RAG, hai ý tưởng này tương ứng
 với (i) bộ chọn lọc rẻ (reranker, Provence) và (ii) bộ nhớ nén cho mỗi tài liệu -- chính là hai nhánh
-mà nhóm kết hợp trong biến thể \emph{lai} ở Mục~\ref{sec:soft}.
+mà nhóm kết hợp trong biến thể \emph{hybrid} ở Mục~\ref{sec:soft}.
 
 \subsection{Truy hồi hiệu quả}
 
 \textbf{BM25S}~\cite{lu2024bm25s} tính trước điểm BM25 thành ma trận thưa, nhanh hơn hàng trăm lần so
-với các cài đặt Python truyền thống. Ở phía dense retrieval~\cite{karpukhin2020dpr}, các mô hình
-nhúng nhỏ như BGE~\cite{xiao2024cpack} hay Qwen3-Embedding~\cite{zhang2025qwen3emb} và
+với các cài đặt Python truyền thống. Ở phía dense retrieval~\cite{karpukhin2020dpr}, các mô hình embedding nhỏ như BGE~\cite{xiao2024cpack} hay Qwen3-Embedding~\cite{zhang2025qwen3emb} và
 EmbeddingGemma~\cite{vera2025embeddinggemma} hỗ trợ \textbf{Matryoshka Representation
 Learning}~\cite{kusupati2022matryoshka} -- cắt ngắn vector (ví dụ 1024$\to$64 chiều) mà vẫn giữ phần
-lớn chất lượng. \textbf{Lượng tử hoá embedding}~\cite{hfquant2024} (int8 hoặc nhị phân kèm
+lớn chất lượng. \textbf{Lượng tử hoá embedding}~\cite{hfquant2024} (int8 hoặc binary kèm
 rescoring) giảm 4--32 lần bộ nhớ. \textbf{Static embedding}~\cite{hfstatic2025} bỏ hẳn Transformer ở
 bước mã hoá truy vấn, nhanh hơn hàng trăm lần trên CPU. Thư viện \textbf{Faiss}~\cite{douze2024faiss}
 cung cấp tìm kiếm chính xác (flat) và xấp xỉ (HNSW, IVF-PQ).

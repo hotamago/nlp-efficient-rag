@@ -12,7 +12,7 @@ Writes docs/report/tables/errors.tex and prints a few examples per category.
 import textwrap
 
 import pandas as pd
-from make_figures import POS, TAB, load, per_question, tex_name
+from make_figures import POS, load, per_question, tex_name, write_tex
 
 from effrag.config import RESULTS_DIR
 
@@ -55,8 +55,7 @@ def write_table(t: pd.DataFrame) -> pd.DataFrame:
         f"{r.net:+.1f} & {r.wrong_kept:.1f} \\\\"
         for lab, r in g.iterrows()
     ]
-    TAB.mkdir(parents=True, exist_ok=True)
-    (TAB / "errors.tex").write_text("\n".join(lines) + "\n")
+    write_tex("errors.tex", lines)
     return g
 
 

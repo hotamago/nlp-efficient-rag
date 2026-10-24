@@ -4,6 +4,7 @@ uv run python scripts/make_figures.py
 """
 
 import json
+import re
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -106,8 +107,37 @@ def save(fig, name: str) -> None:
     plt.close(fig)
 
 
+RETRIEVER_NAME = {
+    "bm25": "BM25S", "static-1024": "Static 1024d", "static-256": "Static 256d (MRL)",
+    "bge-small": "bge-small (flat)", "bge-small-hnsw": "bge-small HNSW",
+    "bge-small-int8": "bge-small int8", "bge-small-binary": "bge-small binary + rescore",
+}  # fmt: skip
+
+
+def vi_num(text: str) -> str:
+    """Vietnamese number style (decimal comma, dot thousands); keeps names like Qwen2.5-1.5B."""
+    text = re.sub(r"(?<![\w.])(\d+)\.(\d+)(?![\w.])", r"\1,\2", text)
+    return re.sub(r"(?<![\w,.])(\d{1,3})(\d{3})(?![\w,.])", r"\1.\2", text)
+
+
+def disp(name: str) -> str:
+    """Display label of a run; internal labels (keys in results/) stay unchanged."""
+    alias = {"Văn bản (20 đoạn)": "Full (20 đoạn)", "Văn bản (rerank top-5)": "Rerank top-5"}
+    return alias.get(name, name.replace("20 docs", "20 đoạn").replace("lai top-1", "hybrid top-1"))
+
+
+def fig_label(name: str) -> str:
+    return vi_num(disp(name))
+
+
 def tex_name(name: str) -> str:
-    return name.replace("τ", "$\\tau$").replace("→", "$\\rightarrow$")
+    """Table label; numbers are localised once, by write_tex()."""
+    return disp(name).replace("τ", "$\\tau$").replace("→", "$\\rightarrow$")
+
+
+def write_tex(name: str, lines: list[str]) -> None:
+    TAB.mkdir(parents=True, exist_ok=True)
+    (TAB / name).write_text(vi_num("\n".join(lines)) + "\n")
 
 
 def fmt(v: float, nd: int = 1) -> str:
@@ -150,7 +180,7 @@ def write_latex(t: pd.DataFrame) -> None:
             )
         lines.append("\\midrule")
     lines[-1] = "\\bottomrule"
-    (TAB / "main_results.tex").write_text("\n".join(lines) + "\n")
+    write_tex("main_results.tex", lines)
 
 
 def recall_table() -> pd.DataFrame:
@@ -173,7 +203,7 @@ def recall_table() -> pd.DataFrame:
             f"{fmt(r.ms, 0)} \\\\{note}"
         )
     TAB.mkdir(parents=True, exist_ok=True)
-    (TAB / "recall.tex").write_text("\n".join(lines) + "\n")
+    write_tex("recall.tex", lines)
     return t
 
 
@@ -217,7 +247,7 @@ def published_table(df: pd.DataFrame) -> pd.DataFrame:
             our_s = " & ".join("--" if pd.isna(v) else f"{v:+.1f}" for v in row)
         lines.append(f"{pub_name} & {pub_s} & {tex_name(key)} & {our_s} \\\\")
         out.append({"published": pub_name, "ours": key, **dict(zip(POS_LABEL, row, strict=True))})
-    (TAB / "published.tex").write_text("\n".join(lines) + "\n")
+    write_tex("published.tex", lines)
     return pd.DataFrame(out)
 
 
@@ -292,12 +322,12 @@ def soft_table() -> pd.DataFrame | None:
             ratio = f"{r.ratio:.1f}$\\times$" if r.Token else "--"  # closed-book: no context
             lines.append(f"\\quad {tex_name(name)} & {accs} & {fmt(r.TB)} & {r.Token:.0f} & "
                          f"{ratio} \\\\")  # fmt: skip
-        (TAB / f"{block_file}.tex").write_text("\n".join(lines[start:] + ["\\bottomrule"]) + "\n")
+        write_tex(f"{block_file}.tex", lines[start:] + ["\\bottomrule"])
         lines.append("\\midrule")
         out.append(t.assign(reader=title))
     lines[-1] = "\\bottomrule"
     TAB.mkdir(parents=True, exist_ok=True)
-    (TAB / "soft.tex").write_text("\n".join(lines) + "\n")
+    write_tex("soft.tex", lines)
     return pd.concat(out)
 
 
@@ -315,9 +345,9 @@ def fig_position(df: pd.DataFrame) -> None:
         if ref in acc.index:
             y = acc.loc[ref].mean()
             ax.axhline(y, color=GRAY, ls=ls, lw=1.2)
-            ax.text(2.06, y, f"{ref} {y:.1f}", va="center", fontsize=8, color=INK2)
+            ax.text(2.06, y, vi_num(f"{ref} {y:.1f}"), va="center", fontsize=8, color=INK2)
     for i, s in enumerate(series):
-        ax.plot(range(len(POS)), acc.loc[s], color=C[i], marker="o", ms=4, label=s)
+        ax.plot(range(len(POS)), acc.loc[s], color=C[i], marker="o", ms=4, label=fig_label(s))
     if ax_trunc is not None:
         ax.plot(range(len(POS)), ax_trunc, color=GRAY, ls="--", marker="s", ms=4, lw=1.4,
                 label="Truncate 730")  # fmt: skip
@@ -343,7 +373,7 @@ def fig_tradeoff(t: pd.DataFrame) -> None:
         ax.scatter(r.Token, r.TB, s=70, color=INK, marker="*", label="Full", zorder=3)
     nudge = {"OpenProvence τ=0.1": (4, -9), "Truncate 730": (4, -9), "Rerank top-10": (-30, 6)}
     for name, r in t[t.family != "Tham chiếu"].iterrows():
-        ax.annotate(name, (r.Token, r.TB), fontsize=6.5, color=INK2,
+        ax.annotate(fig_label(name), (r.Token, r.TB), fontsize=6.5, color=INK2,
                     xytext=nudge.get(name, (4, 2)), textcoords="offset points")  # fmt: skip
     ax.set_xscale("log")
     ax.set_xlabel("Số token ngữ cảnh trung bình (log)")
@@ -369,7 +399,7 @@ def latency_table() -> pd.DataFrame | None:
         gpu, cpu = r.get("cuda", float("nan")), r.get("cpu", float("nan"))
         lines.append(f"{tex_name(name)} & {fmt(gpu, 0)} & {fmt(cpu, 0)} & "
                      f"{fmt(cpu / gpu, 1)}$\\times$ \\\\")  # fmt: skip
-    (TAB / "latency.tex").write_text("\n".join(lines) + "\n")
+    write_tex("latency.tex", lines)
     return t
 
 
@@ -383,15 +413,17 @@ def retrieval_table() -> pd.DataFrame | None:
     rows = []
     for s, r in df.iterrows():
         rows.append(
-            f"{s} & {100 * r['answer_hit@1']:.1f} & {100 * r['answer_hit@5']:.1f} & "
+            f"{RETRIEVER_NAME.get(s, s)} & {100 * r['answer_hit@1']:.1f} & "
+            f"{100 * r['answer_hit@5']:.1f} & "
             f"{100 * r['answer_hit@20']:.1f} & {100 * r['gold_mrr@10']:.1f} & "
             f"{r.index_mb:.1f} & {r.query_ms:.2f} & {r.query_ms_single:.1f} \\\\"
         )
-    (TAB / "retrieval.tex").write_text("\n".join(rows) + "\n")
+    write_tex("retrieval.tex", rows)
     fig, ax = plt.subplots(figsize=(6.2, 3.4))
-    ax.barh(df.index[::-1], 100 * df["answer_hit@5"][::-1], color=C[0], height=0.6)
+    names = [RETRIEVER_NAME.get(s, s) for s in df.index]
+    ax.barh(names[::-1], 100 * df["answer_hit@5"][::-1], color=C[0], height=0.6)
     for y, v in enumerate(100 * df["answer_hit@5"][::-1]):
-        ax.text(v + 0.5, y, f"{v:.1f}", va="center", fontsize=7, color=INK2)
+        ax.text(v + 0.5, y, vi_num(f"{v:.1f}"), va="center", fontsize=7, color=INK2)
     ax.set_xlabel("Answer-hit@5 (%)")
     ax.grid(axis="y", visible=False)
     save(fig, "retrieval_hit5")
@@ -410,7 +442,7 @@ def fig_pipeline() -> None:
         (18, "Retriever", "(Track B)\nBM25S · bge-small\nstatic · MRL\nint8 / binary · HNSW", "#dce9f8"),  # noqa: E501
         (41, "20 đoạn văn", "~2.900 token\n1 đoạn chứa\nđáp án", "#f3f2ee"),
         (59, "Compressor", "(Track A)\ntop-k · LLMLingua-2\nLongLLMLingua\nProvence · OpenProvence", "#fde3d8"),  # noqa: E501
-        (85, "LLM", "Qwen2.5-7B\n(vLLM)\n→ câu trả lời", "#d7f1e6"),
+        (85, "Reader (LLM)", "Qwen2.5-7B\n(vLLM)\n→ câu trả lời", "#d7f1e6"),
     ]  # fmt: skip
     widths = [14, 20, 15, 23, 14]
     for (x, title, body, color), w in zip(boxes, widths, strict=True):
@@ -451,7 +483,7 @@ def e2e_table() -> pd.DataFrame | None:
                      "tokens": r.comp_tokens, "ratio": r.ratio, "diff": diff})  # fmt: skip
         lines.append(f"{tex_name(r.label)} & {100 * r.ctx_recall:.1f} & {100 * r.accuracy:.1f} & "
                      f"{r.comp_tokens:.0f} & {r.ratio:.1f}$\\times$ & {diff} \\\\")  # fmt: skip
-    (TAB / "e2e.tex").write_text("\n".join(lines) + "\n")
+    write_tex("e2e.tex", lines)
     return pd.DataFrame(rows)
 
 
@@ -468,7 +500,7 @@ def fig_soft_loss() -> None:
     ax.axvline(1000, color=GRAY, ls=":", lw=1.2)
     ax.text(1015, ax.get_ylim()[1] * 0.95, "resume từ bước 1000", va="top", fontsize=8,
             color=INK2)  # fmt: skip
-    ax.set_xlabel("Bước tối ưu (8 mẫu/bước)")
+    ax.set_xlabel("Bước huấn luyện (8 mẫu/bước)")
     ax.set_ylabel("Loss (nats/token đáp án)")
     save(fig, "soft_loss")
 

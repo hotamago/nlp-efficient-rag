@@ -76,8 +76,8 @@ accuracy = best-subspan-EM. Chi tiết: báo cáo `docs/report/`, số liệu `r
 - Nén mềm (PISCO, reader Mistral-7B nf4): 160 vector thay 2.875 token (18×), TB 48,2 so với 60,3
   của văn bản trên cùng reader; giảm 9 / 10 / 17 điểm ở vị trí 1 / 10 / 20 (đều có ý nghĩa).
 - Nén mềm encode-once của nhóm (Qwen2.5-1.5B, 2 LoRA, 8 vector/đoạn, 15k mẫu, 1 epoch): **không qua
-  cổng dừng** (dev: 22 so với closed-book 19). Chẩn đoán: một đoạn vàng dạng 8 vector chỉ cho 23%
-  so với 72% dạng văn bản. Biến thể lai 48,5% (5,5×) đúng bằng chỉ đọc top-1 dạng văn bản (49,2%).
+  cổng go/no-go** (dev: 22 so với closed-book 19). Chẩn đoán: một đoạn vàng dạng 8 vector chỉ cho 23%
+  so với 72% dạng văn bản. Biến thể hybrid 48,5% (5,5×) đúng bằng chỉ đọc top-1 dạng văn bản (49,2%).
 - Reader nhỏ (Qwen2.5-1.5B) nhạy vị trí (53,2 / 42,0 / 40,8) → ở đây Provence **tăng** accuracy
   7,5 điểm (có ý nghĩa ở cả 3 vị trí), đúng hiệu ứng LongLLMLingua báo cáo với GPT-3.5.
 
