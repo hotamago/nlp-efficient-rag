@@ -5,8 +5,9 @@
 
 \begin{description}[leftmargin=2.6em,labelindent=0pt]
   \item[RQ1.] Ở mức nén $\approx$4$\times$, \textbf{chọn lọc theo câu} (Provence $\tau=0{,}1$, 4,6$\times$)
-  là cách duy nhất không làm giảm accuracy có ý nghĩa thống kê ở cả ba vị trí (64,0\% so với 65,3\%
-  của ngữ cảnh đầy đủ). Chọn lọc theo tài liệu (rerank top-5) rẻ hơn nhiều nhưng mất 2,6 điểm và giảm
+  và LongLLMLingua (4,3$\times$) là hai cách không làm giảm accuracy có ý nghĩa thống kê ở cả ba vị trí
+  (64,0\% và 64,4\% so với 65,3\% của ngữ cảnh đầy đủ). Hai cách này ngang nhau về thống kê, nhưng
+  Provence nén nhanh hơn 3 lần (200 so với 625 ms/câu trên GPU) và không cần LM sinh. Chọn lọc theo tài liệu (rerank top-5) rẻ hơn nhiều nhưng mất 2,6 điểm và giảm
   có ý nghĩa khi đoạn vàng ở cuối. Xoá theo token (LLMLingua-2 r=0,25) làm accuracy rơi về mức
   closed-book (38,3\% so với 38,8\%): phân tích lỗi cho thấy phần lớn thiệt hại đến từ văn bản bị xé
   vụn chứ không phải mất đáp án. Với reader hiện đại, đường cong vị trí vốn đã gần phẳng (chênh 5,8
@@ -43,8 +44,9 @@
   có thể khác với tác vụ cần lập luận nhiều bước hoặc ngữ cảnh dài hơn nhiều (32K+).
   \item Chỉ số \emph{best subspan EM} phạt các câu trả lời đúng nhưng khác định dạng (ví dụ ngày
   tháng); một phần lỗi trong Mục~\ref{sec:res-errors} thuộc loại này.
-  \item LongLLMLingua chỉ chạy 200 câu ở một vị trí vì chi phí; các số liệu GPT-3.5 chỉ dùng để so
-  sánh độ chênh, không so sánh tuyệt đối.
+  \item Các số liệu GPT-3.5 chỉ dùng để so sánh độ chênh, không so sánh tuyệt đối. Một phần nhỏ các lần
+  chạy bổ sung (BM25/Dense top-5 ở vị trí 1/20, LongLLMLingua, PISCO rerank-5 ở vị trí 1/20) chạy trên
+  máy thứ hai; kết quả kiểm tra chéo trùng 59/60 câu nhưng không đảm bảo trùng tuyệt đối.
   \item Mô hình nén mềm của nhóm được huấn luyện 1 epoch trên 15k mẫu với một GPU 12GB, ít hơn nhiều
   so với dữ liệu và tài nguyên của PISCO; kết luận thất bại chỉ đúng ở quy mô này (một epoch, 8
   vector/đoạn, LLM 1.5B).

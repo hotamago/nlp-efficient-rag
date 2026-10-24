@@ -175,9 +175,11 @@ cho mỗi cấu hình; các tham chiếu không phụ thuộc vị trí (closed-
 
 \paragraph{Rút gọn ma trận thí nghiệm.} Thay vì chạy mọi tổ hợp, chúng tôi (i) chạy \emph{dry-run}
 miễn phí cho mọi bộ nén để đo tỉ lệ nén và context recall, rồi chỉ gọi LLM cho các cấu hình đại diện;
-(ii) với BM25/Dense top-5 -- vốn có số công bố và recall thấp rõ rệt -- chỉ chạy ở vị trí 10;
-(iii) LongLLMLingua (chậm nhất, $\approx$0,6 s/câu) chỉ chạy 200 câu ở vị trí 10; (iv) dùng lại số
-liệu GPT-3.5 đã công bố làm tham chiếu thay vì tái lập.
+(ii) dùng lại số liệu GPT-3.5 đã công bố làm tham chiếu thay vì tái lập. BM25/Dense top-5 và
+LongLLMLingua (chậm nhất, $\approx$0,6 s/câu) ban đầu chỉ chạy ở vị trí 10 (LongLLMLingua 200 câu); ở
+bản cuối, chúng tôi bổ sung đủ 500 câu $\times$ 3 vị trí trên một máy thứ hai (RTX 3080, cùng phiên bản
+vLLM và checkpoint). Kiểm tra lại 60 câu của ngữ cảnh đầy đủ trên máy này cho câu trả lời trùng khớp
+56/60 và accuracy trùng 59/60 so với lần chạy gốc.
 
 \paragraph{Prompt.} Dùng nguyên mẫu prompt của \citet{liu2024lost}:
 \begin{lstlisting}

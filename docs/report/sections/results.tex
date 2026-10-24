@@ -17,7 +17,8 @@ xoá thì reader chỉ còn trả lời được bằng kiến thức sẵn có 
 \centering
 \caption{Context recall (\%) theo vị trí đoạn vàng, số token sau nén, tỉ lệ nén và độ trễ nén trung
 bình mỗi câu hỏi (GPU). Bộ nén mức tài liệu/token/câu xử lý từng đoạn độc lập nên recall không phụ
-thuộc vị trí. LongLLMLingua: $n=200$, chỉ vị trí 10.}
+thuộc vị trí; LongLLMLingua xếp hạng lại và cấp phát ngân sách theo câu hỏi trên cả ngữ cảnh nên recall
+thay đổi theo vị trí. Cột ms là trung bình trong lần chạy; độ trễ đo có kiểm soát ở Bảng~\ref{tab:latency}.}
 \label{tab:recall}
 \small
 \begin{tabular}{l r r r r r r}
@@ -35,7 +36,7 @@ Bộ nén & Token & Tỉ lệ & @1 & @10 & @20 & ms/câu \\
 \begin{itemize}
   \item \textbf{Ở cùng mức nén $\approx$4$\times$, nén mức câu giữ bằng chứng tốt nhất}: Provence
   ($\tau=0{,}1$) giữ 91,6\% đáp án với 621 token (4,6$\times$), hơn Rerank top-5 (79,4\%) 12,2 điểm,
-  hơn LongLLMLingua (77,5\%) và LLMLingua-2 $r=0{,}25$ (68,0\%) lần lượt 14 và 24 điểm. Cắt tỉa theo
+  hơn LongLLMLingua (76,2--80,8\%) và LLMLingua-2 $r=0{,}25$ (68,0\%) lần lượt 11--15 và 24 điểm. Cắt tỉa theo
   \emph{câu}, có điều kiện câu hỏi, giữ nguyên các câu chứa đáp án; còn bỏ token rời rạc (LLMLingua-2
   không nhìn câu hỏi) có thể làm mất chính thực thể cần trả lời.
   \item \textbf{Ở $\approx$2$\times$}, OpenProvence (96,4\%, 2,6$\times$) và Provence $\tau=0{,}01$
@@ -56,9 +57,8 @@ Bộ nén & Token & Tỉ lệ & @1 & @10 & @20 & ms/câu \\
 \begin{table}[t]
 \centering
 \caption{Kết quả chính (Qwen2.5-7B-Instruct-AWQ, $n=500$): accuracy (\%) theo vị trí đoạn vàng và
-trung bình (TB), số token ngữ cảnh, tỉ lệ nén, context recall (\%) và độ trễ nén (ms/câu, GPU). BM25 và
-Dense top-5 chỉ chạy ở vị trí 10 (đã có số công bố, Mục~\ref{sec:res-published}); LongLLMLingua
-($n=200$) ở Bảng~\ref{tab:published}. In đậm: TB cao nhất trong các bộ nén.}
+trung bình (TB), số token ngữ cảnh, tỉ lệ nén, context recall (\%, với LongLLMLingua là trung bình
+3 vị trí) và độ trễ nén (ms/câu, GPU). In đậm: TB cao nhất trong các bộ nén.}
 \label{tab:main}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -87,11 +87,18 @@ một nửa khoảng cách đó vì nhiễu. Kiểm định paired bootstrap (10
   \item \textbf{Ở 4$\times$, nén mức câu gần như không mất độ chính xác.} Provence $\tau=0{,}1$ dùng
   621 token (4,6$\times$) và đạt 64,0\% so với 65,3\%; chênh lệch ở cả ba vị trí đều không có ý nghĩa
   thống kê ($-1{,}8$ [$-5{,}6$; $2{,}0$], $+0{,}4$ [$-3{,}4$; $4{,}2$], $-2{,}4$ [$-6{,}2$; $1{,}4$]
-  điểm ở vị trí 1/10/20). Đây là cấu hình tốt nhất trên toàn bộ đường Pareto.
-  \item \textbf{Chọn tài liệu bằng cross-encoder đứng thứ hai.} Rerank top-5 (4,1$\times$) đạt 62,7\%,
+  điểm ở vị trí 1/10/20).
+  \item \textbf{LongLLMLingua ngang Provence nhưng chậm hơn 3--5 lần.} LongLLMLingua (670 token,
+  4,3$\times$) đạt TB 64,4\% (62,4 / 63,2 / 67,6\%), cũng không giảm có ý nghĩa so với ngữ cảnh đầy đủ
+  ($-3{,}2$ [$-7{,}4$; $1{,}0$], $+1{,}0$ [$-3{,}6$; $5{,}6$], $-0{,}4$ [$-4{,}8$; $3{,}8$]). So cặp trực
+  tiếp với Provence $\tau=0{,}1$, chênh lệch $-1{,}4$ / $+0{,}6$ / $+2{,}0$ điểm đều không có ý nghĩa
+  (khoảng tin cậy chứa 0). Hai bộ nén này cùng dẫn đầu ở 4$\times$; khác biệt nằm ở chi phí: LongLLMLingua
+  cần một LM 0,5B tính perplexity (625 ms/câu trên GPU, 14,8 s trên CPU) so với 200 ms và 4,9 s của
+  Provence (Bảng~\ref{tab:latency}).
+  \item \textbf{Chọn tài liệu bằng cross-encoder đứng ngay sau.} Rerank top-5 (4,1$\times$) đạt 62,7\%,
   nhưng giảm có ý nghĩa ở vị trí 20 ($-6{,}0$ [$-10{,}0$; $-2{,}2$]) vì 20,6\% câu mất đoạn chứa đáp án.
-  Rerank top-10 (2$\times$) đạt 63,7\%. Bộ chọn rẻ hơn kém xa: Dense top-5 56,0\%, BM25 top-5 45,4\%
-  (vị trí 10).
+  Rerank top-10 (2$\times$) đạt 63,7\%. Bộ chọn rẻ hơn kém xa và giảm có ý nghĩa ở cả ba vị trí: Dense
+  top-5 56,6\% (57,4 / 56,0 / 56,4), BM25 top-5 46,3\% (47,6 / 45,4 / 45,8).
   \item \textbf{Nén mức token thất bại với reader 7B.} LLMLingua-2 $r=0{,}25$ (3,5$\times$) chỉ đạt
   38,3\% -- ngang closed-book -- dù context recall vẫn còn 68\%; ở $r=0{,}5$ (1,9$\times$) cũng chỉ
   53,5\%. Ghép rerank-10 trước LLMLingua-2 (cấu hình tốt nhất của LLMLingua-2 trên GPT-3.5) đạt 53,4\%,
@@ -128,8 +135,8 @@ tốt hơn vị trí đầu (Hình~\ref{fig:position}). Các mô hình mới đ�
 nhiều (Qwen2.5: 32K--128K token) nên 2.900 token không còn là ngữ cảnh ``dài''.
 
 Hệ quả là nén \emph{không có nhiều chỗ để làm phẳng} đường cong: Provence $\tau=0{,}1$ cho 63,8 / 62,6 /
-65,6\%, gần như song song với ngữ cảnh đầy đủ. Các bộ nén không phụ thuộc vị trí (mức tài liệu, câu,
-token) giữ nguyên hình dạng đường cong của reader; chỉ truncate -- vốn phụ thuộc vị trí -- tạo ra độ
+65,6\% và LongLLMLingua 62,4 / 63,2 / 67,6\%, gần như song song với ngữ cảnh đầy đủ. Các bộ nén không phụ thuộc vị trí (mức tài liệu, câu,
+LLMLingua-2) giữ nguyên hình dạng đường cong của reader; chỉ truncate -- vốn phụ thuộc vị trí -- tạo ra độ
 dốc lớn.
 
 %------------------------------------------------------------------------------
@@ -141,7 +148,7 @@ dốc lớn.
 \caption{So sánh với số liệu đã công bố trên cùng benchmark (GPT-3.5-Turbo-0613; LongLLMLingua
 \citep{jiang2024longllmlingua} Bảng 1 và LLMLingua-2 \citep{pan2024llmlingua2} Bảng 4). Hàng đầu:
 accuracy tuyệt đối (\%) của ngữ cảnh đầy đủ; các hàng sau: \emph{chênh lệch} (điểm) so với ngữ cảnh
-đầy đủ của chính hệ đó. LongLLMLingua của chúng tôi: so cặp trên 193 câu chung với lần chạy đầy đủ.}
+đầy đủ của chính hệ đó.}
 \label{tab:published}
 \small
 \setlength{\tabcolsep}{3.5pt}
@@ -164,11 +171,12 @@ mỗi hệ} (Bảng~\ref{tab:published}) thay vì số tuyệt đối.
   $-27{,}1$ / $-10{,}5$ / $-23{,}2$ được công bố).
   \item \textbf{Không tái lập được}: kết luận ``nén làm \emph{tăng} độ chính xác ở giữa'' -- LongLLMLingua
   $+17{,}1$ và LLMLingua-2 + lọc tài liệu $+12{,}9$ điểm ở vị trí 10. Với reader của chúng tôi, mức thay
-  đổi tương ứng là $+1{,}0$ (không có ý nghĩa thống kê, khoảng tin cậy [$-6{,}7$; $8{,}8$]) và $-8{,}4$.
+  đổi tương ứng là $+1{,}0$ (không có ý nghĩa thống kê, khoảng tin cậy [$-3{,}6$; $5{,}6$]) và $-8{,}4$.
   Lời giải thích hợp lý nhất là ở Mục~\ref{sec:res-position}: lợi ích chính của các phương pháp này trên
   GPT-3.5 là \emph{khắc phục lost in the middle}, mà reader hiện đại hầu như không còn mắc.
   \item Về vị trí đầu và cuối, cả hai hệ đều cho thấy nén 4$\times$ ở mức tốt nhất chỉ \emph{hoà}
-  với ngữ cảnh đầy đủ (LongLLMLingua $-0{,}7$ trên GPT-3.5; Provence $-1{,}8$ / $-2{,}4$ của chúng tôi).
+  với ngữ cảnh đầy đủ (LongLLMLingua $-0{,}7$ trên GPT-3.5; với reader của chúng tôi LongLLMLingua
+  $-3{,}2$ / $-0{,}4$, Provence $-1{,}8$ / $-2{,}4$, đều không có ý nghĩa thống kê).
 \end{itemize}
 
 %------------------------------------------------------------------------------
@@ -376,10 +384,11 @@ Bảng~\ref{tab:latency} cho thấy ba nhóm rõ rệt:
   tương tác. Rerank top-5 (196 ms) giữ 62,7\% accuracy trung bình so với 65,3\% của ngữ cảnh đầy đủ ở
   4,1$\times$.
   \item \textbf{Mức câu} (OpenProvence, Provence) chậm 21--25$\times$ khi chuyển sang CPU: 1,6 s và 4,9
-  s/câu. Provence là bộ nén tốt nhất về accuracy nhưng chỉ phù hợp xử lý theo lô hoặc khi độ trễ vài
+  s/câu. Provence dẫn đầu về accuracy (cùng LongLLMLingua) nhưng trên CPU chỉ phù hợp xử lý theo lô hoặc khi độ trễ vài
   giây chấp nhận được; OpenProvence (ModernBERT-base, nhỏ hơn) nhanh gấp 3 lần trên CPU.
-  \item \textbf{Mức token} (LLMLingua-2, LongLLMLingua) chậm nhất: 13--15 s/câu trên CPU, trong khi
-  accuracy cũng kém hơn (Mục~\ref{sec:res-main}). Không có lý do dùng chúng khi không có GPU.
+  \item \textbf{Mức token} (LLMLingua-2, LongLLMLingua) chậm nhất: 13--15 s/câu trên CPU. LLMLingua-2
+  còn kém về accuracy; LongLLMLingua ngang Provence nhưng chậm hơn 3 lần cả trên GPU lẫn CPU (14,8 so với
+  4,9 s, Mục~\ref{sec:res-main}). Khi không có GPU, Provence là lựa chọn hợp lý hơn.
 \end{itemize}
 
 Khi reader là API tính phí theo token, nén 4,6$\times$ bằng Provence giảm 78\% token ngữ cảnh đầu
@@ -398,8 +407,7 @@ Với mỗi bộ nén và mỗi vị trí, chúng tôi ghép từng câu hỏi v
 
 \begin{table}[t]
 \centering
-\caption{Phân loại thay đổi so với ngữ cảnh đầy đủ (\% số cặp câu hỏi--vị trí; 1.500 cặp, BM25/Dense
-500 cặp). ``Sai, còn đáp án'': tỉ lệ câu sai sau nén dù đáp án vẫn còn trong ngữ cảnh.}
+\caption{Phân loại thay đổi so với ngữ cảnh đầy đủ (\% số cặp câu hỏi--vị trí; 1.500 cặp mỗi bộ nén). ``Sai, còn đáp án'': tỉ lệ câu sai sau nén dù đáp án vẫn còn trong ngữ cảnh.}
 \label{tab:errors}
 \small
 \begin{tabular}{l r r r r r}
@@ -412,8 +420,11 @@ Bộ nén & \makecell[r]{Hỏng,\\mất đáp án} & \makecell[r]{Hỏng,\\còn 
 \end{table}
 
 \begin{itemize}
-  \item \textbf{Mọi bộ nén đều sửa được 5--9\% câu} mà ngữ cảnh đầy đủ trả lời sai: bớt nhiễu giúp reader
+  \item \textbf{Mọi bộ nén đều sửa được 5--12\% câu} mà ngữ cảnh đầy đủ trả lời sai: bớt nhiễu giúp reader
   tập trung. Với Provence $\tau=0{,}1$, số câu được sửa (8,8\%) gần bù hết số câu hỏng (10,1\%).
+  \item \textbf{LongLLMLingua có tác động ròng tốt nhất} ($-0{,}9$) theo một cách khác: sửa được nhiều
+  câu nhất (11,5\%) nhờ xếp hạng lại và bỏ hẳn các đoạn nhiễu theo câu hỏi, nhưng xoá đáp án nhiều hơn
+  Provence gần 5 lần (8,3\% so với 1,7\%).
   \item \textbf{Nén mức câu gần như không xoá bằng chứng} (Provence 1,7\%, OpenProvence 0,3\%); phần
   hỏng chủ yếu là reader trả lời sai dù bằng chứng còn, thường vì câu bị cắt mất ngữ cảnh xung quanh.
   Ví dụ câu \emph{``who turned out to be the mother on how i met your mother''} (đáp án Tracy McConnell):
@@ -421,7 +432,7 @@ Bộ nén & \makecell[r]{Hỏng,\\mất đáp án} & \makecell[r]{Hỏng,\\còn 
   \item \textbf{LLMLingua-2 hỏng chủ yếu \emph{dù còn bằng chứng}}: ở $r=0{,}5$, 14,3\% so với 3,9\% do
   mất bằng chứng; ở $r=0{,}25$, 19,0\% so với 13,1\%. Văn bản bị bỏ token rời rạc (mất mạo từ, giới từ,
   dấu câu) vẫn chứa đáp án nhưng reader 7B không còn đọc đúng quan hệ giữa các thực thể.
-  \item \textbf{Truncate và BM25 hỏng do mất bằng chứng} (27,7\% và 19,0\%).
+  \item \textbf{Truncate và BM25 hỏng do mất bằng chứng} (27,7\% và 20,1\%).
   \item \textbf{Một phần lỗi do cách chấm}: reader 7B trả lời dài (tối đa 100 token) và đổi định dạng,
   ví dụ ``September 8, 2010'' bị chấm sai với đáp án ``8 September 2010''. Lỗi này ảnh hưởng như nhau
   đến mọi cấu hình nên không làm sai lệch so sánh, nhưng làm accuracy tuyệt đối thấp hơn thực tế.

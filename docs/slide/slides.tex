@@ -326,7 +326,7 @@
       Rerank top-5           & 701  & 4,1$\times$ & 79,4 \\
       LLMLingua-2 $r$=0,25   & 827  & 3,5$\times$ & 68,0 \\
       Rerank-10 $\to$ LLMLingua-2 & 743 & 3,9$\times$ & 79,2 \\
-      LongLLMLingua 730t$^\ddagger$ & 674 & 4,3$\times$ & 77,5 \\
+      LongLLMLingua 730t$^\ddagger$ & 670 & 4,3$\times$ & 77,4 / 76,2 / 80,8 \\
       \textbf{Provence $\tau$=0,1} & 621 & \textbf{4,6$\times$} & \best{91,6} \\
       \midrule
       Rerank top-10          & 1.425 & 2,0$\times$ & 89,8 \\
@@ -335,7 +335,7 @@
       \bottomrule
       \end{tabularx}}\\[0.3em]
       {\tiny $^\dagger$ Truncate: recall ở vị trí 1 / 10 / 20 (cắt mất các đoạn phía sau).
-      Các bộ nén khác không phụ thuộc vị trí. $^\ddagger$ n=200, vị trí 10.\par}
+      $^\ddagger$ LongLLMLingua: recall ở vị trí 1 / 10 / 20. Các bộ nén khác không phụ thuộc vị trí.\par}
     \end{column}
     \begin{column}{0.42\textwidth}
       \small
@@ -361,14 +361,14 @@
     \begin{column}{0.38\textwidth}
       \footnotesize
       \begin{itemize}\setlength\itemsep{0.25em}
-        \item Full 20 đoạn: \textbf{65,3}\% (TB 3 vị trí); closed-book 38,8; oracle 92,6.
-        \item \textbf{Provence $\tau$=0,1}: 621 token (4,6$\times$), \best{64,0}\% -- không giảm có ý
-          nghĩa ở vị trí nào (bootstrap 95\%).
-        \item Rerank top-5 (4,1$\times$): 62,7\%; giảm 6,0 điểm ở vị trí 20 (có ý nghĩa).
+        \item Full: \textbf{65,3}\% (TB 3 vị trí); closed-book 38,8; oracle 92,6.
+        \item \textbf{Provence $\tau$=0,1} (4,6$\times$): \textbf{64,0}\%; \textbf{LongLLMLingua}
+          (4,3$\times$): \best{64,4}\%. Cả hai không giảm có ý nghĩa; Provence nén nhanh hơn 3$\times$.
+        \item Rerank top-5 (4,1$\times$): 62,7\%; $-$6,0 điểm ở vị trí 20 (có ý nghĩa).
         \item \textbf{LLMLingua-2} $r$=0,25: 38,3\% $\approx$ closed-book, dù recall còn 68\%.
       \end{itemize}
       \vfill
-      \takeaway{Nén mức \emph{câu} theo câu hỏi: 4,6$\times$ ít token, gần như không mất độ chính xác.
+      \takeaway{Nén \emph{theo câu hỏi}: $\approx$4$\times$ ít token, gần như không mất độ chính xác.
       Nén mức \emph{token} làm hỏng văn bản đối với reader 7B.}
     \end{column}
   \end{columns}
@@ -386,7 +386,8 @@
       \begin{itemize}\setlength\itemsep{0.4em}
         \item Full: 65,6 / 62,2 / 68,0 -- gần như \textbf{phẳng} (chênh 5,8 điểm) so với chữ U của
           GPT-3.5: 75,7 / 54,1 / 63,1 (chênh 21,6).
-        \item Provence: 63,8 / 62,6 / 65,6 -- song song với Full: không còn nhiều để ``làm phẳng''.
+        \item Provence: 63,8 / 62,6 / 65,6; LongLLMLingua: 62,4 / 63,2 / 67,6 -- song song với Full:
+          không còn nhiều để ``làm phẳng''.
         \item Truncate: 74,0 ở vị trí 1 (\textbf{+8,4}, bớt nhiễu) nhưng 19,6 ở vị trí 10/20.
       \end{itemize}
       \vfill
@@ -410,7 +411,7 @@
   \bottomrule
   \end{tabularx}\endgroup\par\vspace{0.3em}
   {\tiny Hàng đầu: accuracy tuyệt đối của ngữ cảnh đầy đủ; các hàng sau: chênh lệch (điểm) so với ngữ
-  cảnh đầy đủ của chính hệ đó. LongLLMLingua: so cặp 193 câu.\par}
+  cảnh đầy đủ của chính hệ đó.\par}
   \vfill
   \begin{columns}[T]
     \begin{column}{0.5\textwidth}
@@ -602,7 +603,7 @@
       {\footnotesize
       \begin{itemize}\setlength\itemsep{0.3em}
         \item Một LLM 7B lượng tử hoá, một tập (NQ); số công bố dùng GPT-3.5 đã ngừng.
-        \item 500 câu, 3 vị trí; LongLLMLingua chỉ 200 câu ở vị trí 10.
+        \item 500 câu × 3 vị trí, một seed; không đo trên ngữ cảnh dài (32K+).
         \item Nén mềm huấn luyện ở quy mô nhỏ (15k mẫu, 1.5B).
       \end{itemize}}
     \end{column}
@@ -610,8 +611,8 @@
       \small\textbf{\color{hustred}Kết luận}
       {\footnotesize
       \begin{itemize}\setlength\itemsep{0.3em}
-        \item \textbf{Chọn câu > chọn tài liệu > xoá token}: Provence 4,6$\times$, $-$1,3 điểm (n.s.);
-        LLMLingua-2 4$\times$ về mức closed-book.
+        \item \textbf{Nén theo câu hỏi > chọn tài liệu > xoá token}: Provence, LongLLMLingua mất
+        $\le$1,3 điểm (n.s.); LLMLingua-2 4$\times$ về mức closed-book.
         \item Reader 7B gần như hết \emph{lost in the middle} $\Rightarrow$ ``nén làm tăng accuracy'' chỉ còn
         với reader nhỏ (1.5B: Provence +7,5 điểm).
         \item Không GPU vẫn làm được: nén trên CPU + reader qua API; dense nhỏ int8 cho truy hồi.
@@ -619,7 +620,7 @@
       \end{itemize}}
     \end{column}
   \end{columns}
-  \vspace{0.8em}
+  \vspace{0.2em}
   \begin{center}
     {\color{hustred}\rule{0.7\textwidth}{1pt}}\\[0.7ex]
     {\Large\bfseries\color{hustred} Cảm ơn thầy cô và các bạn đã lắng nghe!}\\[0.4ex]

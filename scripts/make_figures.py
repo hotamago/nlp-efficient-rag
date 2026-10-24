@@ -222,8 +222,8 @@ PUBLISHED = [
 def published_table(df: pd.DataFrame) -> pd.DataFrame:
     """Accuracy change vs. each side's own uncompressed baseline (published GPT-3.5 vs. ours).
 
-    Configs run on a different sample (LongLLMLingua, n=200) are compared on the questions they
-    share with the full-context run (paired), not against the n=500 mean.
+    Configs run on a different sample are compared on the questions they share with the
+    full-context run (paired), not against the n=500 mean.
     """
     ours = pivot(df, "accuracy") * 100
     base_pub = PUBLISHED[0][2]
@@ -333,8 +333,8 @@ def soft_table() -> pd.DataFrame | None:
 
 def fig_position(df: pd.DataFrame) -> None:
     acc = pivot(df, "accuracy") * 100
-    series = ["Full (20 docs)", "Provence τ=0.1", "Rerank top-5", "LLMLingua-2 r=0.25",
-              "Rerank-10 → LLMLingua-2"]  # fmt: skip
+    series = ["Full (20 docs)", "Provence τ=0.1", "LongLLMLingua 730t", "Rerank top-5",
+              "LLMLingua-2 r=0.25", "Rerank-10 → LLMLingua-2"]  # fmt: skip
     series = [s for s in series if s in acc.index]
     if "Truncate 730" in acc.index:
         ax_trunc = acc.loc["Truncate 730"]
@@ -542,10 +542,14 @@ def main() -> None:
         print(e2e.round(1).to_string())
     sig = significance(["Rerank top-5", "Rerank top-10", "LLMLingua-2 r=0.25",
                         "Rerank-10 → LLMLingua-2", "Provence τ=0.1", "OpenProvence τ=0.1",
-                        "Truncate 730"])  # fmt: skip
+                        "Truncate 730", "LongLLMLingua 730t", "BM25 top-5",
+                        "Dense top-5"])  # fmt: skip
     if not sig.empty:
         sig.round(1).to_csv(RESULTS_DIR / "compression" / "significance.csv", index=False)
         print(sig.round(1).to_string())
+    head = significance(["LongLLMLingua 730t"], base="Provence τ=0.1")
+    if not head.empty:  # positive delta = LongLLMLingua better than Provence
+        print("LongLLMLingua vs Provence τ=0.1\n", head.round(1).to_string())
 
 
 if __name__ == "__main__":

@@ -1,5 +1,7 @@
 label,pos,n,broken_lost,broken_kept,fixed,wrong_kept
 Truncate 730,0,500,0,20,62,130
+BM25 top-5,0,500,99,21,30,61
+Dense top-5,0,500,59,17,35,76
 Rerank top-10,0,500,12,26,35,128
 Rerank top-5,0,500,28,22,43,94
 LLMLingua-2 r=0.5,0,500,18,71,41,173
@@ -8,6 +10,7 @@ Rerank-10 → LLMLingua-2,0,500,34,58,34,139
 Provence τ=0.01,0,500,1,41,36,158
 Provence τ=0.1,0,500,5,47,43,142
 OpenProvence τ=0.1,0,500,1,49,37,168
+LongLLMLingua 730t,0,500,44,20,48,96
 Truncate 730,9,500,197,21,5,36
 BM25 top-5,9,500,95,18,29,72
 Dense top-5,9,500,57,20,46,83
@@ -19,7 +22,10 @@ Rerank-10 → LLMLingua-2,9,500,25,52,35,146
 Provence τ=0.01,9,500,4,44,42,175
 Provence τ=0.1,9,500,9,37,48,148
 OpenProvence τ=0.1,9,500,1,41,38,176
+LongLLMLingua 730t,9,500,44,19,68,89
 Truncate 730,19,500,219,25,2,36
+BM25 top-5,19,500,108,25,22,70
+Dense top-5,19,500,62,21,25,81
 Rerank top-10,19,500,12,33,25,133
 Rerank top-5,19,500,30,36,36,105
 LLMLingua-2 r=0.5,19,500,22,77,19,192
@@ -28,3 +34,4 @@ Rerank-10 → LLMLingua-2,19,500,34,65,21,152
 Provence τ=0.01,19,500,4,50,30,166
 Provence τ=0.1,19,500,11,42,41,133
 OpenProvence τ=0.1,19,500,2,56,28,173
+LongLLMLingua 730t,19,500,37,21,56,88
