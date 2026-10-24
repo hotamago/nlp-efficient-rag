@@ -17,12 +17,12 @@ Chỉ sửa dòng task của mình (và thêm dòng mới ở cuối). Ngày the
 
 | ID | Task | Người nhận | Trạng thái | Phụ thuộc | Cập nhật / kết quả |
 |---|---|---|---|---|---|
-| T20 | Bổ sung ô thiếu: BM25/Dense top-5 vị trí 1/20, LongLLMLingua n=500 × 3 vị trí, PISCO/Mistral rerank-5 vị trí 1/20; cập nhật báo cáo/slide | Sơn/Claude | doing | – | 24/10 23:50 – vLLM tạm trên vpn-02-clo (RTX 3080), khớp 59/60 câu kiểm tra với lần chạy gốc. BM25 top-5 47,6/45,4/45,8; Dense top-5 57,4/56,0/56,4 |
 
 ## Đã xong
 
 | ID | Task | Người làm | Kết quả |
 |---|---|---|---|
+| T20 | Bổ sung ô thiếu (BM25/Dense top-5 vị trí 1/20, LongLLMLingua n=500 × 3 vị trí, Mistral/PISCO rerank-5 vị trí 1/20); cập nhật báo cáo/slide | Sơn/Claude | LongLLMLingua 62,4/63,2/67,6 (TB 64,4, ngang Provence 64,0, n.s.); BM25-5 46,3, Dense-5 56,6; PISCO rerank-5 63,4/56,2/55,8 (58,5, 72×), văn bản rerank-5 Mistral 62,9. Chạy trên vpn-02-clo (RTX 3080), kiểm tra chéo khớp 59/60. `results/compression/`, `docs/report/`, `docs/slide/` |
 | T01 | Setup uv, repo, dữ liệu LITM NQ-20, loader, tài liệu | Sơn/Claude | Commit `da9b092` |
 | T02 | Dry-run nén cho 15 cấu hình (500 câu, vị trí 1/10/20) | Sơn/Claude | Provence τ=0.1: 4,6×, recall 0,916; Rerank top-5: 4,1×, 0,794; LLMLingua-2 r=0,25: 3,5×, 0,68 – `results/compression_dryrun/` |
 | T06 | Track B – `scripts/run_retrieval.py` trên corpus gộp 50,7k đoạn, 500 câu | Sơn/Claude | answer-hit@5: BM25 55,2 · static-256 55,8 (49,5 MB) · bge-small 76,2 (74,3 MB) · int8 76,2 (18,6 MB) · binary+rescore 73,4 (2,3 MB) – `results/retrieval/summary.jsonl` |

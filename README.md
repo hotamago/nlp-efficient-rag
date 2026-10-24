@@ -77,7 +77,8 @@ accuracy = best-subspan-EM. Chi tiết: báo cáo `docs/report/`, số liệu `r
 - End-to-end (bge-small int8 top-20 trên kho 50,7k → nén → 7B): full 66,0; rerank-5 63,0; Provence
   62,4 (4,6×, không giảm có ý nghĩa); LLMLingua-2 36,4.
 - Nén mềm (PISCO, reader Mistral-7B nf4): 160 vector thay 2.875 token (18×), TB 48,2 so với 60,3
-  của văn bản trên cùng reader; giảm 9 / 10 / 17 điểm ở vị trí 1 / 10 / 20 (đều có ý nghĩa).
+  của văn bản trên cùng reader; giảm 9 / 10 / 17 điểm ở vị trí 1 / 10 / 20 (đều có ý nghĩa). Rerank top-5
+  trước PISCO: 58,5 với 40 vector (72×), so với 62,9 của văn bản rerank top-5.
 - Nén mềm encode-once của nhóm (Qwen2.5-1.5B, 2 LoRA, 8 vector/đoạn, 15k mẫu, 1 epoch): **không qua
   cổng go/no-go** (dev: 22 so với closed-book 19). Chẩn đoán: một đoạn vàng dạng 8 vector chỉ cho 23%
   so với 72% dạng văn bản. Biến thể hybrid 48,5% (5,5×) ≈ chỉ đọc top-1 dạng văn bản (49,2%).

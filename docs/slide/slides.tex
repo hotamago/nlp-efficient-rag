@@ -438,14 +438,14 @@
       \midrule
       \inputtable{tables/soft_pisco.tex}
       \end{tabularx}\endgroup\par\vspace{0.2em}
-      {\tiny Cùng reader, cùng prompt PISCO; chỉ khác ngữ cảnh văn bản / vector. Rerank: chỉ vị trí 10.}
+      {\tiny Cùng reader, cùng prompt PISCO; chỉ khác ngữ cảnh văn bản / vector.}
     \end{column}
     \begin{column}{0.35\textwidth}
       \footnotesize
       \begin{itemize}\setlength\itemsep{0.35em}
         \item 160 vector thay 2.875 token (18$\times$): TB 48,2\% so với 60,3\% văn bản.
         \item Giảm 9 / 10 / 17 điểm ở vị trí 1 / 10 / 20, đều có ý nghĩa; tệ nhất khi đoạn vàng ở cuối.
-        \item Rerank-5 $\to$ PISCO: 56,2\% với 40 vector (72$\times$), vẫn kém văn bản rerank-5 6,8 điểm.
+        \item Rerank-5 $\to$ PISCO: 58,5\% với 40 vector (72$\times$), +10 điểm so với 20 đoạn; ngang văn bản rerank-5 ở vị trí 1, kém 6--7 điểm ở 10/20.
         \item Cao hơn closed-book 12 điểm: vector \emph{có} mang thông tin, nhưng chưa đủ thay văn bản.
       \end{itemize}
     \end{column}

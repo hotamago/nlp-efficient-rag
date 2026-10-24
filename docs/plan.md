@@ -30,7 +30,7 @@ slide ở `docs/slide/slides.pdf` (18 trang), gói Overleaf tạo bằng `script
   LLMLingua-2 36,4.
 - [x] CPU vs GPU: rerank 196/16 ms, Provence 4,9/0,2 s mỗi câu.
 - [x] Mở rộng ngoài kế hoạch ban đầu (đã thống nhất, T12/T16–T18): nén mềm. PISCO 48,2 so với 60,3
-  văn bản (Mistral-7B). Bộ nén encode-once tự huấn luyện (Qwen2.5-1.5B) không qua cổng dừng; chẩn
+  văn bản (Mistral-7B); rerank-5 → PISCO 58,5 (72×) so với văn bản rerank-5 62,9. Bộ nén encode-once tự huấn luyện (Qwen2.5-1.5B) không qua cổng go/no-go; chẩn
   đoán: 8 vector/đoạn không giữ được đáp án. Phụ: reader 1.5B nhạy vị trí, Provence tăng 7,5 điểm.
 - Bỏ: A6 (RECOMP, Sentinel, EXIT, tiếng Việt), B3 NanoBEIR.
 

@@ -185,8 +185,7 @@ mỗi hệ} (Bảng~\ref{tab:published}) thay vì số tuyệt đối.
 
 \begin{table}[t]
 \centering
-\caption{Nén mềm so với văn bản trên \emph{cùng} một reader (accuracy \%, 500 câu/vị trí; khối
-Mistral: rerank chỉ đo ở vị trí 10). Token: số vị trí đầu vào của ngữ cảnh (vector nhớ, cộng token
+\caption{Nén mềm so với văn bản trên \emph{cùng} một reader (accuracy \%, 500 câu/vị trí). Token: số vị trí đầu vào của ngữ cảnh (vector nhớ, cộng token
 tiêu đề với mô hình của nhóm); Tỉ lệ: tỉ lệ nén so với 20 đoạn văn bản.}
 \label{tab:soft}
 \small
@@ -204,14 +203,17 @@ vector nhớ (8 vector/đoạn, nén 18$\times$ theo bộ đếm token chung) v�
 bình, cao hơn 12 điểm so với closed-book của chính reader này (36,2\%) nhưng còn xa oracle (89,6\%).
 Tuy vậy, so với văn bản đầy đủ trên cùng reader (60,3\%), PISCO giảm 8,8 / 10,4 / 17,2 điểm ở vị trí 1 / 10 / 20, cả ba đều có
 ý nghĩa thống kê (khoảng tin cậy bootstrap 95\% lần lượt $[-13,6;\,-4,0]$, $[-14,8;\,-6,0]$,
-$[-22,0;\,-12,6]$). Mức giảm lớn nhất khi đoạn vàng nằm cuối: đường cong vị trí của PISCO có dạng chữ
+$[-21,8;\,-12,6]$). Mức giảm lớn nhất khi đoạn vàng nằm cuối: đường cong vị trí của PISCO có dạng chữ
 U ngược (52,8 ở giữa, 44,0 ở cuối), trong khi văn bản dao động ít hơn (56,6--63,2). Như vậy, trên bài toán 20 đoạn với
 19 đoạn nhiễu, nén mềm nén mạnh hơn mọi phương pháp văn bản trong Bảng~\ref{tab:main} nhưng chưa
 đạt mức suy giảm nhỏ mà bài báo gốc báo cáo trên các bộ QA với ít đoạn hơn~\citep{louis2025pisco}.
-Lọc trước bằng cross-encoder (rerank top-5, chỉ đo ở vị trí 10) giúp PISCO thêm 3,4 điểm (56,2\%,
-khoảng tin cậy $[-0,6;\,7,4]$, chưa có ý nghĩa) với chỉ 40 vector nhớ (72$\times$), nhưng vẫn kém văn
-bản rerank top-5 trên cùng reader 6,8 điểm ($[-10,8;\,-2,8]$). Với văn bản, rerank top-5 không mất gì
-so với 20 đoạn ($-$0,2 điểm), khớp với kết quả trên Qwen2.5-7B. Lưu ý thêm: Mistral-7B nf4 đọc văn bản kém Qwen2.5-7B (60,3 so với 65,3), nên chênh lệch được tính trên
+Lọc trước bằng cross-encoder (rerank top-5) giúp PISCO rõ rệt: với chỉ 40 vector nhớ (72$\times$),
+accuracy tăng từ 48,2\% lên 58,5\% ($+15{,}6$ $[11{,}4;\,19{,}6]$, $+3{,}4$ $[-0{,}6;\,7{,}4]$,
+$+11{,}8$ $[7{,}6;\,15{,}8]$ điểm ở vị trí 1/10/20) -- bớt 15 đoạn nhiễu quan trọng với nén mềm hơn với
+văn bản. Khi đoạn vàng ở đầu, PISCO rerank top-5 ngang văn bản rerank top-5 ($-0{,}6$ $[-4{,}2;\,3{,}0]$);
+ở vị trí 10 và 20 vẫn kém 6,8 và 6,0 điểm (có ý nghĩa). Với văn bản, rerank top-5 không làm giảm
+accuracy ở vị trí nào và còn \emph{tăng} 7,4 điểm ở vị trí 1 ($[3{,}8;\,11{,}0]$): Mistral-7B nhạy với
+nhiễu và vị trí hơn Qwen2.5-7B (văn bản 20 đoạn chỉ đạt 56,6\% ở vị trí 1). Lưu ý thêm: Mistral-7B nf4 đọc văn bản kém Qwen2.5-7B (60,3 so với 65,3), nên chênh lệch được tính trên
 cùng reader chứ không so sánh chéo.
 
 \paragraph{Mô hình encode-once của nhóm.} Huấn luyện 1 epoch (1.875 bước, khoảng 4 giờ GPU trên

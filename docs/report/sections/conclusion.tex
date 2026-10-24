@@ -28,7 +28,8 @@
   nén giảm 78\% token đầu vào và do đó giảm chi phí API tương ứng. GPU chỉ cần để rút ngắn độ trễ
   nén.
   \item[RQ5.] Chưa, ở quy mô của nhóm. Checkpoint công bố PISCO nén 18$\times$ nhưng mất 9--17 điểm so
-  với văn bản trên cùng reader Mistral-7B (48,2\% so với 60,3\%). Mô hình encode-once của nhóm
+  với văn bản trên cùng reader Mistral-7B (48,2\% so với 60,3\%); lọc trước bằng rerank top-5 nâng PISCO
+  lên 58,5\% ở 72$\times$ nhưng vẫn kém văn bản rerank top-5 (62,9\%). Mô hình encode-once của nhóm
   (Qwen2.5-1.5B, 15k mẫu, 1 epoch) không vượt cổng go/no-go đặt trước: chỉ dùng vector nhớ thì ngang
   closed-book (25,7\% so với 26,2\% trên LITM), vì 8 vector không giữ được đáp án của từng đoạn (23\%
   so với 72\% khi đọc đoạn vàng dạng văn bản). Biến thể hybrid đạt 48,5\% ở 5,5$\times$, nhưng chỉ xấp xỉ
@@ -45,7 +46,7 @@
   \item Chỉ số \emph{best subspan EM} phạt các câu trả lời đúng nhưng khác định dạng (ví dụ ngày
   tháng); một phần lỗi trong Mục~\ref{sec:res-errors} thuộc loại này.
   \item Các số liệu GPT-3.5 chỉ dùng để so sánh độ chênh, không so sánh tuyệt đối. Một phần nhỏ các lần
-  chạy bổ sung (BM25/Dense top-5 ở vị trí 1/20, LongLLMLingua, PISCO rerank-5 ở vị trí 1/20) chạy trên
+  chạy bổ sung (BM25/Dense top-5 ở vị trí 1/20, LongLLMLingua, rerank-5 của khối Mistral/PISCO ở vị trí 1/20) chạy trên
   máy thứ hai; kiểm tra chéo 60 câu cho câu trả lời trùng 56/60 và accuracy trùng 59/60, nhưng không đảm bảo trùng tuyệt đối.
   \item Mô hình nén mềm của nhóm được huấn luyện 1 epoch trên 15k mẫu với một GPU 12GB, ít hơn nhiều
   so với dữ liệu và tài nguyên của PISCO; kết luận thất bại chỉ đúng ở quy mô này (một epoch, 8
