@@ -22,7 +22,7 @@ Toàn bộ thí nghiệm đã xong. Số liệu nằm trong `results/`, báo cá
 slide ở `docs/slide/slides.pdf` (18 trang), gói Overleaf tạo bằng `scripts/overleaf_zip.py`.
 
 - [x] Track A (reader Qwen2.5-7B-Instruct-AWQ, 500 câu × vị trí 1/10/20): Provence τ=0,1 đạt 64,0 so với
-  65,3 của full (4,6×, không có ý nghĩa); rerank top-5 62,7; LLMLingua-2 r=0,25 38,3 ≈ closed-book 38,8.
+  65,3 của full (4,6×, không có ý nghĩa); LongLLMLingua 64,4 (4,3×, ngang Provence nhưng chậm hơn 3×); rerank top-5 62,7; LLMLingua-2 r=0,25 38,3 ≈ closed-book 38,8.
   Chỉ đo 3 vị trí {0, 9, 19} thay vì 5 để tiết kiệm GPU.
 - [x] Track B: bge-small int8 hit@5 76,2 (chỉ mục 18,6 MB), BM25S 55,2. Qwen3-Embedding và ColBERT
   không chạy (tốn GPU, bge-small đã đủ để rút ra kết luận).

@@ -48,8 +48,8 @@ trong bài gốc) để xếp hạng đoạn và nén token với ngân sách $B
 DeBERTa-v3-large với hai đầu ra: điểm liên quan của cả đoạn (reranking) và xác suất giữ của từng token,
 được gộp thành quyết định giữ/bỏ từng \emph{câu} theo ngưỡng $\tau$. Ngưỡng nhỏ giữ nhiều câu hơn.
 Đoạn không còn câu nào bị loại hẳn. \textbf{OpenProvence}~\cite{openprovence} dùng cùng ý tưởng với
-backbone ModernBERT-base (150M tham số, nhỏ hơn 3 lần). Chúng tôi quét $\tau\in\{0{,}01; 0{,}1; 0{,}5\}$
-cho Provence và $\tau\in\{0{,}1; 0{,}5\}$ cho OpenProvence.
+backbone ModernBERT-base (150M tham số, nhỏ hơn 3 lần). Chúng tôi dùng $\tau\in\{0{,}01; 0{,}1\}$
+cho Provence (tương ứng $\approx$2$\times$ và $\approx$4$\times$) và $\tau=0{,}1$ cho OpenProvence.
 
 \begin{table}[t]
 \centering

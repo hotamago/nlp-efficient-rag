@@ -62,11 +62,14 @@ accuracy = best-subspan-EM. Chi tiết: báo cáo `docs/report/`, số liệu `r
 |---|---|---|---|---|
 | Full (20 đoạn) | 2.875 | 1,0× | 65,6 / 62,2 / 68,0 | 65,3 |
 | Provence τ=0,1 (chọn câu) | 621 | 4,6× | 63,8 / 62,6 / 65,6 | 64,0 |
+| LongLLMLingua 730t (token, theo câu hỏi) | 670 | 4,3× | 62,4 / 63,2 / 67,6 | 64,4 |
 | Rerank top-5 (chọn tài liệu) | 701 | 4,1× | 64,2 / 62,0 / 62,0 | 62,7 |
-| LLMLingua-2 r=0,25 (xoá token) | 827 | 3,5× | – | 38,3 |
-| Closed-book / Oracle | – | – | 38,8 / 92,6 | – |
+| Dense top-5 / BM25 top-5 | 702 / 705 | 4,1× | 57,4 / 56,0 / 56,4 · 47,6 / 45,4 / 45,8 | 56,6 / 46,3 |
+| LLMLingua-2 r=0,25 (xoá token) | 827 | 3,5× | 36,6 / 40,8 / 37,6 | 38,3 |
+| Closed-book / Oracle | 0 / 113 | – / 25,5× | không phụ thuộc vị trí | 38,8 / 92,6 |
 
-- Provence là bộ nén duy nhất không giảm accuracy có ý nghĩa thống kê ở cả 3 vị trí.
+- Provence và LongLLMLingua là hai bộ nén không giảm accuracy có ý nghĩa thống kê ở cả 3 vị trí; hai
+  bộ ngang nhau (so cặp n.s.), nhưng Provence nén nhanh hơn 3× (200 so với 625 ms/câu trên GPU).
 - Reader hiện đại gần như không còn *lost in the middle* (chênh 5,8 điểm so với 21,6 của
   GPT-3.5) → lợi ích "nén làm tăng accuracy ở giữa" của LongLLMLingua không tái lập được.
 - Không cần GPU: nén trên CPU (rerank 0,2 s, Provence 4,9 s/câu) + reader qua API.
@@ -77,7 +80,7 @@ accuracy = best-subspan-EM. Chi tiết: báo cáo `docs/report/`, số liệu `r
   của văn bản trên cùng reader; giảm 9 / 10 / 17 điểm ở vị trí 1 / 10 / 20 (đều có ý nghĩa).
 - Nén mềm encode-once của nhóm (Qwen2.5-1.5B, 2 LoRA, 8 vector/đoạn, 15k mẫu, 1 epoch): **không qua
   cổng go/no-go** (dev: 22 so với closed-book 19). Chẩn đoán: một đoạn vàng dạng 8 vector chỉ cho 23%
-  so với 72% dạng văn bản. Biến thể hybrid 48,5% (5,5×) đúng bằng chỉ đọc top-1 dạng văn bản (49,2%).
+  so với 72% dạng văn bản. Biến thể hybrid 48,5% (5,5×) ≈ chỉ đọc top-1 dạng văn bản (49,2%).
 - Reader nhỏ (Qwen2.5-1.5B) nhạy vị trí (53,2 / 42,0 / 40,8) → ở đây Provence **tăng** accuracy
   7,5 điểm (có ý nghĩa ở cả 3 vị trí), đúng hiệu ứng LongLLMLingua báo cáo với GPT-3.5.
 

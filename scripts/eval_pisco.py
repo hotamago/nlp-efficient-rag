@@ -153,8 +153,8 @@ def main() -> None:
     ap.add_argument("--track", default="compression", help="e.g. compression_smoke for tests")
     ap.add_argument(
         "--configs", nargs="+",
-        default=["pisco:all", "text:full", "text:closedbook", "text:oracle", "pisco:rerank5@9",
-                 "text:rerank5@9"],
+        default=["pisco:all", "text:full", "text:closedbook", "text:oracle", "pisco:rerank5",
+                 "text:rerank5"],
         help="mode:variant[@pos,...]; @ overrides --positions for that config",
     )  # fmt: skip
     args = ap.parse_args()

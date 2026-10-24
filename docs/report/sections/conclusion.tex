@@ -7,7 +7,7 @@
   \item[RQ1.] Ở mức nén $\approx$4$\times$, \textbf{chọn lọc theo câu} (Provence $\tau=0{,}1$, 4,6$\times$)
   và LongLLMLingua (4,3$\times$) là hai cách không làm giảm accuracy có ý nghĩa thống kê ở cả ba vị trí
   (64,0\% và 64,4\% so với 65,3\% của ngữ cảnh đầy đủ). Hai cách này ngang nhau về thống kê, nhưng
-  Provence nén nhanh hơn 3 lần (200 so với 625 ms/câu trên GPU) và không cần LM sinh. Chọn lọc theo tài liệu (rerank top-5) rẻ hơn nhiều nhưng mất 2,6 điểm và giảm
+  Provence nén nhanh hơn 3 lần (200 so với 625 ms/câu trên GPU) và không cần LM sinh. Chọn lọc theo tài liệu (rerank top-5) rẻ hơn nhiều nhưng mất 2,5 điểm và giảm
   có ý nghĩa khi đoạn vàng ở cuối. Xoá theo token (LLMLingua-2 r=0,25) làm accuracy rơi về mức
   closed-book (38,3\% so với 38,8\%): phân tích lỗi cho thấy phần lớn thiệt hại đến từ văn bản bị xé
   vụn chứ không phải mất đáp án. Với reader hiện đại, đường cong vị trí vốn đã gần phẳng (chênh 5,8
@@ -31,7 +31,7 @@
   với văn bản trên cùng reader Mistral-7B (48,2\% so với 60,3\%). Mô hình encode-once của nhóm
   (Qwen2.5-1.5B, 15k mẫu, 1 epoch) không vượt cổng go/no-go đặt trước: chỉ dùng vector nhớ thì ngang
   closed-book (25,7\% so với 26,2\% trên LITM), vì 8 vector không giữ được đáp án của từng đoạn (23\%
-  so với 72\% khi đọc đoạn vàng dạng văn bản). Biến thể hybrid đạt 48,5\% ở 5,5$\times$, nhưng đúng bằng
+  so với 72\% khi đọc đoạn vàng dạng văn bản). Biến thể hybrid đạt 48,5\% ở 5,5$\times$, nhưng chỉ xấp xỉ
   chỉ đọc đoạn top-1 dạng văn bản (49,2\%). Ngược lại, trên reader 1.5B nhạy với vị trí, nén
   \emph{văn bản} bằng Provence tăng accuracy có ý nghĩa (+7,5 điểm trung bình). Với ngân sách nhỏ,
   chọn lọc văn bản vẫn là lựa chọn tốt hơn nén mềm.
@@ -46,7 +46,7 @@
   tháng); một phần lỗi trong Mục~\ref{sec:res-errors} thuộc loại này.
   \item Các số liệu GPT-3.5 chỉ dùng để so sánh độ chênh, không so sánh tuyệt đối. Một phần nhỏ các lần
   chạy bổ sung (BM25/Dense top-5 ở vị trí 1/20, LongLLMLingua, PISCO rerank-5 ở vị trí 1/20) chạy trên
-  máy thứ hai; kết quả kiểm tra chéo trùng 59/60 câu nhưng không đảm bảo trùng tuyệt đối.
+  máy thứ hai; kiểm tra chéo 60 câu cho câu trả lời trùng 56/60 và accuracy trùng 59/60, nhưng không đảm bảo trùng tuyệt đối.
   \item Mô hình nén mềm của nhóm được huấn luyện 1 epoch trên 15k mẫu với một GPU 12GB, ít hơn nhiều
   so với dữ liệu và tài nguyên của PISCO; kết luận thất bại chỉ đúng ở quy mô này (một epoch, 8
   vector/đoạn, LLM 1.5B).
