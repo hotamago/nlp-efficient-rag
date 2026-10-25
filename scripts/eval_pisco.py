@@ -8,6 +8,7 @@ Note: the text rows still use PISCO's retrained first/last layers (embeddings, l
 they are a same-backbone control, not the stock Mistral-7B-Instruct-v0.2.
 
     uv run python scripts/eval_pisco.py --n 500 --positions 0 9 19
+    uv run python scripts/eval_pisco.py --retriever bge-small-int8 --configs pisco:all text:full
 """
 
 from __future__ import annotations
@@ -24,7 +25,7 @@ from tqdm import tqdm
 
 from effrag.compression.base import render_docs
 from effrag.config import DATA_DIR, SEED, limit_gpu_memory
-from effrag.data import Doc, Example, load_litm_nq
+from effrag.data import Doc, Example, load_litm_nq, load_retrieved
 from effrag.metrics import best_subspan_em, exact_match, f1
 from effrag.results import new_run_id, record_run
 from effrag.tokens import count_tokens
@@ -107,8 +108,12 @@ def select(examples: list[Example], variant: str, reranker) -> list[list[Doc]]:
     return out
 
 
-def run(model, mode: str, variant: str, pos: int, n: int, bs: int, reranker, run_id: str):
-    examples = load_litm_nq(pos, n=n, seed=SEED)
+def run(model, mode: str, variant: str, pos: int, n: int, bs: int, reranker, run_id: str,
+        retriever: str | None = None):  # fmt: skip
+    if retriever:  # Track C: retrieved top-20 from the pooled corpus, no fixed gold position
+        examples = load_retrieved(retriever, n=n, seed=SEED)
+    else:
+        examples = load_litm_nq(pos, n=n, seed=SEED)
     selected = select(examples, variant, reranker)
     rows = []
     for b in tqdm(range(0, len(examples), bs), desc=f"{mode}/{variant} gold@{pos}"):
@@ -151,6 +156,7 @@ def main() -> None:
     ap.add_argument("--bs", type=int, default=1, help="batch size for PISCO (compressed) configs")
     ap.add_argument("--bs-text", type=int, default=1, help="batch size for full-text configs")
     ap.add_argument("--track", default="compression", help="e.g. compression_smoke for tests")
+    ap.add_argument("--retriever", default=None, help="Track C: retrieved top-20 (track e2e)")
     ap.add_argument(
         "--configs", nargs="+",
         default=["pisco:all", "text:full", "text:closedbook", "text:oracle", "pisco:rerank5",
@@ -158,6 +164,8 @@ def main() -> None:
         help="mode:variant[@pos,...]; @ overrides --positions for that config",
     )  # fmt: skip
     args = ap.parse_args()
+    if args.retriever and args.track == "compression":
+        args.track = "e2e"
 
     from sentence_transformers import CrossEncoder
 
@@ -174,11 +182,14 @@ def main() -> None:
         positions = [int(x) for x in at.split(",")] if at else args.positions
         if variant in ("closedbook", "oracle"):
             positions = [0]
+        if args.retriever:
+            positions = [-1]
         for pos in positions:
             bs = args.bs if mode == "pisco" else args.bs_text
             try:  # PISCO's generate_from_text does not disable autograd itself
                 with torch.inference_mode():
-                    rows = run(model, mode, variant, pos, args.n, bs, reranker, run_id)
+                    rows = run(model, mode, variant, pos, args.n, bs, reranker, run_id,
+                               args.retriever)  # fmt: skip
             except torch.OutOfMemoryError as e:  # skip this config, keep the loaded model
                 print(f"OOM in {cfg}@{pos}: {e}", flush=True)
                 torch.cuda.empty_cache()

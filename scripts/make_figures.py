@@ -465,24 +465,36 @@ def e2e_table() -> pd.DataFrame | None:
     if not path.exists():
         return None
     df = pd.read_csv(path)
-    df = df[(df.n == 500) & (df.llm_model == MAIN_LLM)]
-    df = df.sort_values("date").drop_duplicates(["method", "params"], keep="last")
+    df = df[df.n == 500]
+    df = df.sort_values("date").drop_duplicates(["method", "params", "llm_model"], keep="last")
     df["label"] = [label(m, p) for m, p in zip(df.method, df.params, strict=True)]
-    acc = {}
-    for r in df.itertuples():
-        rows = [json.loads(x) for x in open(RESULTS_DIR / "e2e" / f"{r.run_id}_gold-1.jsonl")]
-        acc[r.label] = pd.DataFrame(rows).set_index("qid")["accuracy"]
     rows, lines = [], []
-    for r in df.sort_values("comp_tokens", ascending=False).itertuples():
-        if r.label == BASE:
-            diff = "--"
-        else:
-            m, lo, hi = paired_bootstrap(acc[BASE], acc[r.label])
-            diff = f"{m:+.1f} [{lo:.1f}; {hi:.1f}]".replace("-", "$-$")
-        rows.append({"label": r.label, "recall": 100 * r.ctx_recall, "acc": 100 * r.accuracy,
-                     "tokens": r.comp_tokens, "ratio": r.ratio, "diff": diff})  # fmt: skip
-        lines.append(f"{tex_name(r.label)} & {100 * r.ctx_recall:.1f} & {100 * r.accuracy:.1f} & "
-                     f"{r.comp_tokens:.0f} & {r.ratio:.1f}$\\times$ & {diff} \\\\")  # fmt: skip
+    # main reader first, then PISCO against Mistral reading the same top-20 as text
+    blocks = [(None, [MAIN_LLM], BASE),
+              ("Mistral-7B nf4: PISCO so với văn bản trên cùng reader",
+               ["mistral-7b-nf4", "mistral-7b-nf4+pisco"], "Văn bản (20 đoạn)")]  # fmt: skip
+    for title, llms, base in blocks:
+        sub = df[df.llm_model.isin(llms)]
+        if base not in set(sub.label):
+            continue
+        acc = {}
+        for r in sub.itertuples():
+            rows_ = [json.loads(x) for x in open(RESULTS_DIR / "e2e" / f"{r.run_id}_gold-1.jsonl")]
+            acc[r.label] = pd.DataFrame(rows_).set_index("qid")["accuracy"]
+        if title:
+            lines += ["\\midrule", f"\\multicolumn{{6}}{{l}}{{\\textit{{{title}}}}} \\\\"]
+        for r in sub.sort_values("comp_tokens", ascending=False).itertuples():
+            if r.label == base:
+                diff = "--"
+            else:
+                m, lo, hi = paired_bootstrap(acc[base], acc[r.label])
+                diff = f"{m:+.1f} [{lo:.1f}; {hi:.1f}]".replace("-", "$-$")
+            rows.append({"label": r.label, "reader": r.llm_model, "recall": 100 * r.ctx_recall,
+                         "acc": 100 * r.accuracy, "tokens": r.comp_tokens, "ratio": r.ratio,
+                         "diff": diff})  # fmt: skip
+            lines.append(f"{tex_name(r.label)} & {100 * r.ctx_recall:.1f} & "
+                         f"{100 * r.accuracy:.1f} & {r.comp_tokens:.0f} & "
+                         f"{r.ratio:.1f}$\\times$ & {diff} \\\\")  # fmt: skip
     write_tex("e2e.tex", lines)
     return pd.DataFrame(rows)
 
