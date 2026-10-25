@@ -74,8 +74,9 @@ accuracy = best-subspan-EM. Chi tiết: báo cáo `docs/report/`, số liệu `r
   GPT-3.5) → lợi ích "nén làm tăng accuracy ở giữa" của LongLLMLingua không tái lập được.
 - Không cần GPU: nén trên CPU (rerank 0,2 s, Provence 4,9 s/câu) + reader qua API.
 - Truy hồi: bge-small int8 hit@5 76,2 (chỉ mục 18,6 MB) so với BM25 55,2.
-- End-to-end (bge-small int8 top-20 trên kho 50,7k → nén → 7B): full 66,0; rerank-5 63,0; Provence
-  62,4 (4,6×, không giảm có ý nghĩa); LLMLingua-2 36,4.
+- End-to-end (bge-small int8 top-20 trên kho 50,7k → nén → 7B): full 66,0; LongLLMLingua 65,6
+  (4,3×); rerank-10 65,0; OpenProvence 64,2; rerank-5 63,0; Provence 62,4 (4,6×) – đều không giảm có
+  ý nghĩa; Dense-5 56,8; BM25-5 50,4; LLMLingua-2 r=0,25 36,4.
 - Nén mềm (PISCO, reader Mistral-7B nf4): 160 vector thay 2.875 token (18×), TB 48,2 so với 60,3
   của văn bản trên cùng reader; giảm 9 / 10 / 17 điểm ở vị trí 1 / 10 / 20 (đều có ý nghĩa). Rerank top-5
   trước PISCO: 58,5 với 40 vector (72×), so với 62,9 của văn bản rerank top-5.

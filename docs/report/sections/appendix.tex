@@ -26,7 +26,7 @@ uv run python scripts/train_soft.py --out data/soft/run1
 uv run python scripts/eval_soft.py gate --run data/soft/run1
 uv run python scripts/eval_soft.py diag --run data/soft/run1
 uv run python scripts/eval_soft.py litm --run data/soft/run1
-# end-to-end (also: full, rerank_topk, llmlingua2)
+# end-to-end (same --method/--params as Track A for every row of the e2e table)
 uv run python scripts/build_retrieved.py
 uv run python scripts/run_compression.py --retriever bge-small-int8 \
      --method provence --params '{"threshold": 0.1}'

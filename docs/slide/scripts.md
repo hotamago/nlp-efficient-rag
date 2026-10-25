@@ -178,8 +178,10 @@ khoảng 2 phút dự phòng trong khung 20 phút. Mọi số liệu lấy từ 
 ## Slide 15 – Kết quả 7: end-to-end (0:45)
 
 > Ghép cả hai track: bge-small int8 lấy top-20 từ kho, rồi nén, rồi Qwen-7B trả lời. Top-20 chứa
-> đáp án ở 95,4% câu, accuracy **66,0%**, ngang thiết lập 20 đoạn chuẩn. Rerank top-5 và Provence
-> nén hơn 4 lần, chỉ mất 3 đến 3,6 điểm, không có ý nghĩa; LLMLingua-2 mất gần 30 điểm.
+> đáp án ở 95,4% câu, accuracy **66,0%**, ngang thiết lập 20 đoạn chuẩn. Ở mức nén 4 lần,
+> **LongLLMLingua 65,6%** gần như không mất gì, rerank top-5 và Provence mất 3 đến 3,6 điểm – đều
+> không có ý nghĩa; Dense top-5 mất 9 điểm, LLMLingua-2 mất gần 30 điểm. Thứ tự giữa các bộ nén
+> về cơ bản giống thí nghiệm trên 20 đoạn chuẩn.
 >
 > Tức là: chỉ mục 18,6 MB cộng bộ nén chạy CPU giữ gần nguyên chất lượng ở **một phần tư số token**.
 

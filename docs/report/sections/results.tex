@@ -352,8 +352,14 @@ Cấu hình & Recall & Acc & Token & Tỉ lệ & $\Delta$ [CI 95\%] \\
 
 Top-20 truy hồi chứa đáp án ở 95,4\% câu hỏi và cho 66,0\% accuracy, ngang với 20 tài liệu LITM
 (65,3\%): retriever 33M tham số với chỉ mục int8 không làm pipeline kém đi. Thứ tự giữa các bộ nén
-giữ nguyên như Bảng~\ref{tab:main}: rerank top-5 và Provence giảm token 4,1--4,6$\times$, chỉ mất
-3,0--3,6 điểm và không có ý nghĩa thống kê, còn LLMLingua-2 mất 29,6 điểm. Khác biệt duy nhất là
+về cơ bản giữ nguyên như Bảng~\ref{tab:main}. Ở mức $\approx$4$\times$, LongLLMLingua (65,6\%, $-0{,}4$),
+rerank top-5 (63,0\%, $-3{,}0$) và Provence $\tau$=0,1 (62,4\%, $-3{,}6$) không giảm có ý nghĩa
+thống kê, còn Dense top-5 ($-9{,}2$), rerank-10 $\to$ LLMLingua-2 ($-10{,}0$), BM25 top-5
+($-15{,}6$) và LLMLingua-2 $r$=0,25 ($-29{,}6$) giảm có ý nghĩa. Ở mức $\approx$2$\times$, rerank
+top-10 (65,0\%, $-1{,}0$) và OpenProvence (64,2\%, $-1{,}8$) gần như không mất điểm; Provence
+$\tau$=0,01 mất 4,0 điểm ($[-7{,}4;\,-0{,}6]$) và LLMLingua-2 $r$=0,5 mất 8,0 điểm. Truncate 730
+không còn sụt như ở Bảng~\ref{tab:main} (63,0\%, $-3{,}0$): top-20 được giữ theo thứ hạng của
+retriever, nên cắt cụt chính là giữ các đoạn xếp hạng cao nhất. Khác biệt đáng chú ý là
 Provence không còn hơn rerank (62,4 so với 63,0) dù giữ nhiều bằng chứng hơn (recall 88,8 so với
 82,2). Một giải thích khả dĩ là kho gộp chứa nhiều đoạn gần trùng nhau về chủ đề; Provence giữ lại
 câu liên quan từ nhiều đoạn, nên ngữ cảnh sau nén vụn và nhiễu hơn năm đoạn nguyên vẹn của rerank.
