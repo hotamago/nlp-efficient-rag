@@ -17,12 +17,12 @@ Chỉ sửa dòng task của mình (và thêm dòng mới ở cuối). Ngày the
 
 | ID | Task | Người nhận | Trạng thái | Phụ thuộc | Cập nhật / kết quả |
 |---|---|---|---|---|---|
-| T21 | Bổ sung bảng end-to-end đủ mọi cấu hình Track A + PISCO trên top-20 truy hồi; cập nhật báo cáo/slide/script | Sơn/Claude | doing | T13, T20 | 25/10 16:45 – 9 cấu hình Qwen xong (LongLLMLingua 65,6, OpenProvence 64,2, Dense-5 56,8…); PISCO/Mistral đang chạy trên vpn-02-clo |
 
 ## Đã xong
 
 | ID | Task | Người làm | Kết quả |
 |---|---|---|---|
+| T21 | Bổ sung bảng end-to-end đủ mọi cấu hình Track A; cập nhật báo cáo/slide/script | Sơn/Claude | 13 cấu hình trên top-20 bge-small int8: LongLLMLingua 65,6 (−0,4), rerank-10 65,0, OpenProvence 64,2, rerank-5 63,0, Provence 62,4, Dense-5 56,8, BM25-5 50,4, LLMLingua-2 r=0,25 36,4 (full 66,0). PISCO top-20 51,6% (18×) chỉ có trên server, chưa có dòng Mistral văn bản cùng reader nên không đưa vào bảng. `results/e2e/`, `tab:e2e`, slide 15 |
 | T20 | Bổ sung ô thiếu (BM25/Dense top-5 vị trí 1/20, LongLLMLingua n=500 × 3 vị trí, Mistral/PISCO rerank-5 vị trí 1/20); cập nhật báo cáo/slide | Sơn/Claude | LongLLMLingua 62,4/63,2/67,6 (TB 64,4, ngang Provence 64,0, n.s.); BM25-5 46,3, Dense-5 56,6; PISCO rerank-5 63,4/56,2/55,8 (58,5, 72×), văn bản rerank-5 Mistral 62,9. Chạy trên vpn-02-clo (RTX 3080), kiểm tra chéo khớp 59/60. `results/compression/`, `docs/report/`, `docs/slide/` |
 | T01 | Setup uv, repo, dữ liệu LITM NQ-20, loader, tài liệu | Sơn/Claude | Commit `da9b092` |
 | T02 | Dry-run nén cho 15 cấu hình (500 câu, vị trí 1/10/20) | Sơn/Claude | Provence τ=0.1: 4,6×, recall 0,916; Rerank top-5: 4,1×, 0,794; LLMLingua-2 r=0,25: 3,5×, 0,68 – `results/compression_dryrun/` |
