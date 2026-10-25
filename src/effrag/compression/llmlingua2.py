@@ -12,14 +12,18 @@ class LLMLingua2(DocwiseCompressor):
         self,
         rate: float = 0.5,
         model: str = "microsoft/llmlingua-2-xlm-roberta-large-meetingbank",
+        device: str | None = None,
     ):
         from llmlingua import PromptCompressor
 
-        from effrag.config import device
+        from effrag.config import device as default_device
 
         super().__init__()
         self.rate, self.model_name = rate, model
-        self.pc = PromptCompressor(model_name=model, use_llmlingua2=True, device_map=device())
+        # `device` lets the demo keep this one on CPU while vLLM shares the GPU.
+        self.pc = PromptCompressor(
+            model_name=model, use_llmlingua2=True, device_map=device or default_device()
+        )
 
     def params(self) -> dict:
         return {"rate": self.rate, "model": self.model_name}
