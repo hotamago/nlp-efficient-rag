@@ -17,6 +17,7 @@ Chỉ sửa dòng task của mình (và thêm dòng mới ở cuối). Ngày the
 
 | ID | Task | Người nhận | Trạng thái | Phụ thuộc | Cập nhật / kết quả |
 |---|---|---|---|---|---|
+| T21 | Bổ sung bảng end-to-end đủ mọi cấu hình Track A + PISCO trên top-20 truy hồi; cập nhật báo cáo/slide/script | Sơn/Claude | doing | T13, T20 | 25/10 16:45 – 9 cấu hình Qwen xong (LongLLMLingua 65,6, OpenProvence 64,2, Dense-5 56,8…); PISCO/Mistral đang chạy trên vpn-02-clo |
 
 ## Đã xong
 
