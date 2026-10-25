@@ -4,6 +4,7 @@ uv run python app/demo.py            # http://localhost:7860
 """
 
 import html
+import os
 import re
 import time
 from functools import cache
@@ -22,7 +23,10 @@ METHODS = {
     "Full (không nén)": ("full", {}),
     "Rerank top-5 (MiniLM)": ("rerank_topk", {"k": 5}),
     "LLMLingua-2 (r=0.25)": ("llmlingua2", {"rate": 0.25}),
-    "LongLLMLingua (730 tok)": ("longllmlingua", {"target_token": 730}),
+    "LongLLMLingua (730 tok)": (
+        "longllmlingua",
+        {"target_token": 730, "device": os.getenv("EFFRAG_DEMO_LONGLLMLINGUA_DEVICE")},
+    ),
     "Provence (τ=0.1)": ("provence", {"threshold": 0.1}),
     "OpenProvence (τ=0.1)": ("provence", {"threshold": 0.1, "model": OP}),
 }

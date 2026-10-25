@@ -8,13 +8,19 @@ from effrag.data import Doc
 class LongLLMLingua(Compressor):
     name = "longllmlingua"
 
-    def __init__(self, target_token: int = 730, model: str = "Qwen/Qwen2.5-0.5B-Instruct"):
+    def __init__(
+        self,
+        target_token: int = 730,
+        model: str = "Qwen/Qwen2.5-0.5B-Instruct",
+        device: str | None = None,
+    ):
         from llmlingua import PromptCompressor
 
-        from effrag.config import device
+        from effrag.config import device as default_device
 
         self.target_token, self.model_name = target_token, model
-        self.pc = PromptCompressor(model_name=model, device_map=device())
+        # `device` lets the demo keep this one on CPU while vLLM shares the GPU.
+        self.pc = PromptCompressor(model_name=model, device_map=device or default_device())
         _patch_legacy_cache(self.pc.model)
         _patch_prefix_length(self.pc)
 
