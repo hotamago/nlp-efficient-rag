@@ -17,15 +17,16 @@ class Provence(DocwiseCompressor):
         threshold: float = 0.1,
         model: str = "naver/provence-reranker-debertav3-v1",
         revision: str | None = None,
+        device: str | None = None,
     ):
         from transformers import AutoModel
 
-        from effrag.config import device
+        from effrag.config import device as default_device
 
         super().__init__()
         self.threshold, self.model_name, self.revision = threshold, model, revision
         self.model = AutoModel.from_pretrained(model, trust_remote_code=True, revision=revision)
-        self.model = self.model.to(device()).eval()
+        self.model = self.model.to(device or default_device()).eval()
 
     def params(self) -> dict:
         return {"threshold": self.threshold, "model": self.model_name}

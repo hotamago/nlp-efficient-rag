@@ -18,19 +18,20 @@ from effrag.generation import build_prompt
 from effrag.metrics import best_subspan_em
 from effrag.tokens import count_tokens
 
-# The LLMLingua models can be pushed to CPU when vLLM shares a small GPU with the demo.
-LINGUA_DEVICE = os.getenv("EFFRAG_DEMO_LLMLINGUA_DEVICE")
+# Memory-heavy compressors (LLMLingua-2, LongLLMLingua, OpenProvence) can be pushed to CPU when
+# vLLM shares a small GPU with the demo; Provence, the reranker and retrievers stay on GPU.
+OFFLOAD = os.getenv("EFFRAG_DEMO_OFFLOAD_DEVICE")
 OP = "hotchpotch/open-provence-reranker-v1-gte-modernbert-base"
 METHODS = {
     "Full (không nén)": ("full", {}),
     "Rerank top-5 (MiniLM)": ("rerank_topk", {"k": 5}),
-    "LLMLingua-2 (r=0.25)": ("llmlingua2", {"rate": 0.25, "device": LINGUA_DEVICE}),
+    "LLMLingua-2 (r=0.25)": ("llmlingua2", {"rate": 0.25, "device": OFFLOAD}),
     "LongLLMLingua (730 tok)": (
         "longllmlingua",
-        {"target_token": 730, "device": LINGUA_DEVICE},
+        {"target_token": 730, "device": OFFLOAD},
     ),
     "Provence (τ=0.1)": ("provence", {"threshold": 0.1}),
-    "OpenProvence (τ=0.1)": ("provence", {"threshold": 0.1, "model": OP}),
+    "OpenProvence (τ=0.1)": ("provence", {"threshold": 0.1, "model": OP, "device": OFFLOAD}),
 }
 DEFAULT_METHODS = ["Full (không nén)", "LLMLingua-2 (r=0.25)", "Provence (τ=0.1)"]
 

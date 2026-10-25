@@ -125,9 +125,9 @@ uv run python app/demo.py
 # Không có GPU / GPU đang bận: ép chạy bộ nén và retriever trên CPU
 EFFRAG_DEVICE=cpu uv run python app/demo.py
 
-# vLLM và demo chung một GPU 12 GB: đẩy LLMLingua-2/LongLLMLingua sang CPU (vLLM dùng
-# --gpu-memory-utilization 0.55 --enforce-eager), các bộ nén còn lại vẫn chạy GPU
-EFFRAG_DEMO_LLMLINGUA_DEVICE=cpu uv run python app/demo.py
+# vLLM và demo chung một GPU 12 GB: đẩy LLMLingua-2, LongLLMLingua, OpenProvence sang CPU
+# (vLLM dùng --gpu-memory-utilization 0.55 --enforce-eager); Provence, reranker, retriever vẫn GPU
+EFFRAG_DEMO_OFFLOAD_DEVICE=cpu uv run python app/demo.py
 
 # Mở cho máy khác trong mạng truy cập, đổi cổng
 GRADIO_SERVER_NAME=0.0.0.0 GRADIO_SERVER_PORT=7861 uv run python app/demo.py
