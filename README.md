@@ -108,6 +108,38 @@ uv run pytest -q
 
 Kết quả ghi vào `results/<track>/summary.csv` (mỗi dòng = method × tham số × vị trí vàng).
 
+### Demo Gradio
+
+Cần làm xong bước 1–2 ở trên (môi trường + dữ liệu). Gradio nằm trong nhóm `demo`, đã được
+`uv sync` cài mặc định.
+
+```bash
+# (Tuỳ chọn) bật LLM để demo sinh câu trả lời – ví dụ vLLM cục bộ, cùng model với thí nghiệm:
+vllm serve Qwen/Qwen2.5-7B-Instruct-AWQ --served-model-name qwen2.5-7b-instruct \
+  --max-model-len 4096 --port 8000
+# rồi trong .env: LLM_BASE_URL=http://localhost:8000/v1  LLM_MODEL=qwen2.5-7b-instruct
+
+# Chạy demo → mở http://localhost:7860
+uv run python app/demo.py
+
+# Không có GPU / GPU đang bận: ép chạy bộ nén và retriever trên CPU
+EFFRAG_DEVICE=cpu uv run python app/demo.py
+
+# Mở cho máy khác trong mạng truy cập, đổi cổng
+GRADIO_SERVER_NAME=0.0.0.0 GRADIO_SERVER_PORT=7861 uv run python app/demo.py
+```
+
+- **Tab "So sánh bộ nén":** chọn câu hỏi (200 câu NQ đầu), vị trí đoạn vàng và các bộ nén
+  (Full, Rerank top-5, LLMLingua-2, LongLLMLingua, Provence, OpenProvence). Mỗi bộ nén hiện số
+  token trước/sau, thời gian nén, đáp án còn trong ngữ cảnh hay không, và câu trả lời của LLM; câu
+  được giữ tô xanh, câu bị loại gạch xám.
+- **Tab "RAG end-to-end":** nhập câu hỏi tiếng Anh → truy hồi top-k bằng BM25S hoặc bge-small trên
+  kho gộp 50,7k đoạn → nén → LLM trả lời.
+- Không có LLM (chưa điền `.env` hoặc server tắt) demo vẫn chạy, chỉ bỏ phần câu trả lời.
+- Lần đầu chọn mỗi bộ nén sẽ tải model từ Hugging Face (đặt `HF_HOME` sang ổ còn trống). Provence
+  và OpenProvence dùng `trust_remote_code`: nếu terminal hỏi `Do you wish to run the custom code?`
+  thì trả lời `y`. Trên CPU, LongLLMLingua và LLMLingua-2 mất khoảng 13–15 s/câu, Provence ~5 s.
+
 ## 4. Cấu trúc thư mục
 
 ```
@@ -120,7 +152,7 @@ src/effrag/          package chính
   results.py         schema kết quả chung
 scripts/             download_data, run_compression, smoke_* (kiểm tra model)
 tests/               pytest
-app/                 demo Gradio (sẽ làm)
+app/                 demo Gradio (app/demo.py, xem mục "Demo Gradio")
 results/             kết quả (commit)      data/  dữ liệu + cache (không commit)
 docs/                research.md, plan.md, requirements.md, report/, slide/
 ```
